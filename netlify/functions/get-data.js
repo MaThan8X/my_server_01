@@ -1,42 +1,40 @@
-// netlify/functions/get-data.js
+// 1. Import hàm createClient từ supabase-js
+const { createClient } = require('@supabase/supabase-js')
 
-// 1. Import supabase client từ thư viện supabase-js
-import { createClient } from '@supabase/supabase-js'
-
-// 2. Khởi supabase client với biến môi trường do Netlify cung cấp
-//    - SUPABASE_URL: URL project Supabase (ví dụ https://xyl9h2a5.supabase.co)
-//    - SUPABASE_ANON_KEY: public anon key để truy cập bảng
+// 2. Khởi tạo Supabase client giống trên
 const supabase = createClient(
-  process.env.SUPABASE_URL,    // Lấy từ Netlify ENV
-  process.env.SUPABASE_ANON_KEY // Lấy từ Netlify ENV
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
 )
 
-/**
- * 3. Handler sẽ được Netlify gọi khi client fetch '/.netlify/functions/get-data'
- * @param {object} event   Thông tin request (phương thức, headers, v.v.)
- * @returns {object}       Đáp trả HTTP với statusCode và body JSON
- */
-export async function handler(event) {
+// 3. Export handler cho Netlify Functions
+exports.handler = async function() {
   try {
-    // 4. Query toàn bộ bản ghi từ bảng 'sensor_data', sắp xếp theo created_at tăng dần
+    // 4. Query bảng sensor_data
+    //    - Lấy tối đa 20 bản ghi mới nhất (entry_id giảm dần)
     const { data, error } = await supabase
-      .from('sensor_data')               // Tên bảng
-      .select('*')                       // Chọn tất cả cột
-      .order('created_at', { ascending: true }) // Sắp xếp theo cột created_at
+      .from('sensor_data')
+      .select('*')
+      .order('entry_id', { ascending: false })
+      .limit(20)
 
-    // 5. Nếu có lỗi từ Supabase, ném ra để catch phía dưới
-    if (error) throw error
+    // 5. Nếu có lỗi, trả về status 500
+    if (error) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: error.message })
+      }
+    }
 
-    // 6. Trả về JSON chứa mảng record cho front-end
+    // 6. Trả về dữ liệu dưới dạng mảng JSON
     return {
-      statusCode: 200,                   // HTTP 200 OK
-      body: JSON.stringify(data)         // Chuyển mảng sang chuỗi JSON
+      statusCode: 200,
+      body: JSON.stringify(data)
     }
   } catch (err) {
-    // 7. Nếu có lỗi nào khác, log ra console Netlify và trả 500
-    console.error('❌ get-data error:', err)
+    // 7. Bắt lỗi và trả về status 500
     return {
-      statusCode: 500,                   // HTTP 500 Internal Server Error
+      statusCode: 500,
       body: JSON.stringify({ error: err.message })
     }
   }
