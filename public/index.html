@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Cảm Biến</title>
+
+  <!-- 1.1. Link tới file CSS -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- 1.2. Nhúng Chart.js từ CDN để tạo biểu đồ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- 1.3. Tiêu đề trang -->
+  <h1>Dashboard Cảm Biến</h1>
+
+  <!-- 1.4. Khung điều khiển: chọn ngày từ - đến và nút Xem -->
+  <div class="controls">
+    <label>Từ: <input type="date" id="dateFrom" /></label>
+    <label>Đến: <input type="date" id="dateTo" /></label>
+    <button id="btnLoad">Xem</button>
+  </div>
+
+  <!-- 1.5. Bọc table trong div để scroll khi >20 dòng -->
+  <div id="table-container">
+    <table id="datatable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Ngày</th>
+          <th>Giờ</th>
+          <th>Mực nước</th>
+          <th>Vol</th>
+          <th>CBE1X4X</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 1.6. Khung cho biểu đồ; canvas sẽ vẽ line chart -->
+  <div id="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- 1.7. Nhúng script xử lý data và vẽ chart -->
+  <script src="app.js"></script>
+</body>
+</html>

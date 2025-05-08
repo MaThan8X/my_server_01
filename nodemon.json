@@ -1,0 +1,6 @@
+{
+    "watch": ["index.js", "routes/", "controllers/"], 
+    "ignore": ["node_modules/"], 
+    "delay": "2500" 
+  }
+  
