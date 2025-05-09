@@ -1,28 +1,34 @@
 // netlify/functions/send-data.js
 
-// 1️⃣ Import Supabase client builder
+// 1️⃣ Import Supabase
 const { createClient } = require('@supabase/supabase-js')
-
-// 2️⃣ Khởi Supabase với ENV vars từ Netlify
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 )
 
-// 3️⃣ Export handler cho Netlify Functions
-exports.handler = async function(event) {
-  // 4️⃣ Lấy nguyên raw query string (ví dụ "id=F01774;date=...")
-  let rawQS = event.rawQueryString || ''
+// 2️⃣ Export handler
+exports.handler = async function(event, context) {
+  // —————— Debug logging ——————
+  console.log('🏷️ event.rawQueryString =', event.rawQueryString)
+  console.log('🏷️ event.rawUrl         =', event.rawUrl)
 
-  // 5️⃣ Thay toàn bộ ';' thành '&' để parser hiểu đúng
-  //    "id=F01774;date=07/05/2025" → "id=F01774&date=07/05/2025"
+  // 3️⃣ Lấy queryString, ưu tiên rawQueryString, fallback rawUrl
+  let rawQS = event.rawQueryString
+  if (!rawQS || rawQS === '') {
+    // event.rawUrl = "/.netlify/functions/send-data?id=...;date=...;"
+    const parts = (event.rawUrl || '').split('?')
+    rawQS = parts[1] || ''
+  }
+
+  // 4️⃣ Thay ';' thành '&' để URLSearchParams nhận
   rawQS = rawQS.replace(/;/g, '&')
 
-  // 6️⃣ Tạo URL dummy gắn rawQS, rồi dùng URLSearchParams
+  // 5️⃣ Tạo URL dummy và parse params
   const tmp = new URL('http://dummy/?' + rawQS)
   const params = tmp.searchParams
 
-  // 7️⃣ Lấy từng tham số (null nếu không có)
+  // 6️⃣ Lấy các tham số
   const id      = params.get('id')
   const date    = params.get('date')
   const time    = params.get('time')
@@ -30,7 +36,9 @@ exports.handler = async function(event) {
   const vol     = params.get('vol')
   const cbe1x4x = params.get('cbe1x4x')
 
-  // 8️⃣ Validate bắt buộc đủ 6 trường
+  console.log('🎯 Parsed params:', { id, date, time, mucnuoc, vol, cbe1x4x })
+
+  // 7️⃣ Validate
   if (!id || !date || !time || !mucnuoc || !vol || !cbe1x4x) {
     return {
       statusCode: 400,
@@ -41,11 +49,11 @@ exports.handler = async function(event) {
   }
 
   try {
-    // 9️⃣ Chuyển mucnuoc/vol thành số
+    // 8️⃣ Chuyển kiểu số
     const mu = parseInt(mucnuoc, 10)
     const vo = parseInt(vol,     10)
 
-    // 🔟 Insert vào Supabase
+    // 9️⃣ Insert vào Supabase
     const { error } = await supabase
       .from('sensor_data')
       .insert([{
@@ -55,15 +63,15 @@ exports.handler = async function(event) {
         cbe1x4x
       }])
 
-    // 1️⃣1️⃣ Nếu lỗi DB, trả 500 kèm message
     if (error) {
+      console.error('❌ Supabase error:', error)
       return {
         statusCode: 500,
         body: JSON.stringify({ error: error.message })
       }
     }
 
-    // 1️⃣2️⃣ Thành công → trả về xác nhận và echo lại dữ liệu
+    // 🔟 Thành công
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -75,7 +83,7 @@ exports.handler = async function(event) {
       })
     }
   } catch (err) {
-    // 1️⃣3️⃣ Bắt mọi exception khác
+    console.error('⚠️ Exception:', err)
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
