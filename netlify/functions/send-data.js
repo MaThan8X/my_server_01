@@ -1,27 +1,44 @@
-// 1. Import createClient từ supabase-js để kết nối Supabase
+// 1. Import supabase client builder
 const { createClient } = require('@supabase/supabase-js')
 
-// 2. Khởi tạo Supabase client với URL và Anon Key từ ENV
+// 2. Khởi tạo Supabase với URL và anon key từ ENV
 const supabase = createClient(
-  process.env.SUPABASE_URL,     // SUPABASE_URL đã set trên Netlify
-  process.env.SUPABASE_ANON_KEY  // SUPABASE_ANON_KEY đã set trên Netlify
+  process.env.SUPABASE_URL,     // Ví dụ https://xyz.supabase.co
+  process.env.SUPABASE_ANON_KEY  // Public anon key
 )
 
-// 3. Export handler để Netlify gọi khi có HTTP request
+// 3. Export handler để Netlify gọi
 exports.handler = async function(event) {
-  // 4. Lấy object queryStringParameters 
-  //    Netlify tự parse cả dấu ';' và '&'
-  const q = event.queryStringParameters || {}
+  // 4. Lấy raw query string (phần sau dấu '?'), ví dụ:
+  //    "id=F01774;date=07/05/2025;time=14:30;..."
+  const rawQS = event.rawQueryString || ''
 
-  // 5. Lấy trực tiếp từng giá trị (hoặc undefined nếu không có)
-  const id      = q.id       || null
-  const date    = q.date     || null
-  const time    = q.time     || null
-  const mucnuoc = q.mucnuoc  || null
-  const vol     = q.vol      || null
-  const cbe1x4x = q.cbe1x4x  || null
+  // 5. Split thành các cặp key=value, tách qua ';' hoặc '&'
+  //    .filter(Boolean) để loại bỏ chuỗi rỗng
+  const pairs = rawQS
+    .split(/[&;]/)    // tách qua dấu & hoặc ;
+    .filter(Boolean)  // bỏ những entry rỗng
 
-  // 6. Kiểm tra bắt buộc: nếu thiếu bất kỳ đâu, trả về 400
+  // 6. Parse từng "key=value" vào object params
+  const params = {}
+  for (let pair of pairs) {
+    const idx = pair.indexOf('=')
+    if (idx > 0) {
+      const key   = pair.substring(0, idx)      // trước dấu '='
+      const value = pair.substring(idx + 1)     // sau dấu '='
+      params[key] = value                       // gán vào params
+    }
+  }
+
+  // 7. Lấy 6 tham số cần thiết—hoặc null nếu không có
+  const id      = params.id      || null
+  const date    = params.date    || null
+  const time    = params.time    || null
+  const mucnuoc = params.mucnuoc || null
+  const vol     = params.vol     || null
+  const cbe1x4x = params.cbe1x4x || null
+
+  // 8. Validate: nếu thiếu tham số nào, trả về 400 Bad Request
   if (!id || !date || !time || !mucnuoc || !vol || !cbe1x4x) {
     return {
       statusCode: 400,
@@ -32,19 +49,23 @@ exports.handler = async function(event) {
   }
 
   try {
-    // 7. Ghi vào bảng sensor_data
+    // 9. Chuyển kiểu số cho mucnuoc và vol
+    const mu   = parseInt(mucnuoc, 10)
+    const vo   = parseInt(vol,     10)
+
+    // 10. Ghi dữ liệu vào bảng sensor_data
     const { error } = await supabase
       .from('sensor_data')
       .insert([{
-        id,                             // TEXT
-        date,                           // TEXT
-        time,                           // TEXT
-        mucnuoc: parseInt(mucnuoc, 10), // INT
-        vol:    parseInt(vol,    10),   // INT
-        cbe1x4x                         // TEXT
+        id,           // text
+        date,         // text
+        time,         // text
+        mucnuoc: mu,  // int
+        vol:      vo, // int
+        cbe1x4x      // text
       }])
 
-    // 8. Nếu Supabase trả về lỗi, chuyển tiếp 500
+    // 11. Nếu Supabase trả về lỗi, phản hồi lại 500
     if (error) {
       return {
         statusCode: 500,
@@ -52,19 +73,19 @@ exports.handler = async function(event) {
       }
     }
 
-    // 9. Thành công, phản hồi 200 với JSON xác nhận
+    // 12. Thành công, trả về JSON xác nhận và echo lại dữ liệu
     return {
       statusCode: 200,
       body: JSON.stringify({
-        status: 'received',
+        status:   'received',
         id, date, time,
-        mucnuoc: Number(mucnuoc),
-        vol:      Number(vol),
+        mucnuoc: mu,
+        vol:      vo,
         cbe1x4x
       })
     }
   } catch (err) {
-    // 10. Bắt ngoại lệ bất kỳ, trả về 500
+    // 13. Bắt mọi exception khác, trả về 500
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
