@@ -2,29 +2,37 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Cảm Biến</title>
-
-  <!-- 1.1. Link tới file CSS -->
+  
+  <!-- 1. Link tới file CSS chính -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- 1.2. Nhúng Chart.js từ CDN để tạo biểu đồ -->
+  <!-- 2. Load Chart.js từ CDN để vẽ đồ thị -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- 1.3. Tiêu đề trang -->
+  <!-- 3. Tiêu đề trang -->
   <h1>Dashboard Cảm Biến</h1>
 
-  <!-- 1.4. Khung điều khiển: chọn ngày từ - đến và nút Xem -->
-  <div class="controls">
-    <label>Từ: <input type="date" id="dateFrom" /></label>
-    <label>Đến: <input type="date" id="dateTo" /></label>
-    <button id="btnLoad">Xem</button>
+  <!-- 4. Khối lọc theo ngày -->
+  <div class="filter">
+    <!-- 4.1 Nhãn và ô nhập ngày bắt đầu -->
+    <label for="fromInput">Từ:</label>
+    <input id="fromInput" type="date" />
+
+    <!-- 4.2 Nhãn và ô nhập ngày kết thúc -->
+    <label for="toInput">Đến:</label>
+    <input id="toInput" type="date" />
+
+    <!-- 4.3 Nút bấm để lấy dữ liệu -->
+    <button id="viewBtn">Xem</button>
   </div>
 
-  <!-- 1.5. Bọc table trong div để scroll khi >20 dòng -->
-  <div id="table-container">
-    <table id="datatable">
+  <!-- 5. Khung bảng dữ liệu -->
+  <div class="table-container">
+    <table>
+      <!-- 5.1 Phần đầu bảng -->
       <thead>
         <tr>
           <th>ID</th>
@@ -35,16 +43,17 @@
           <th>CBE1X4X</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <!-- 5.2 Phần thân bảng, JS sẽ chèn các <tr> ở đây -->
+      <tbody id="table-body"></tbody>
     </table>
   </div>
 
-  <!-- 1.6. Khung cho biểu đồ; canvas sẽ vẽ line chart -->
-  <div id="chart-container">
-    <canvas id="chart"></canvas>
+  <!-- 6. Khung vẽ đồ thị -->
+  <div class="chart-container">
+    <canvas id="myChart"></canvas>
   </div>
 
-  <!-- 1.7. Nhúng script xử lý data và vẽ chart -->
+  <!-- 7. File JavaScript front-end chứa logic fetch/render -->
   <script src="app.js"></script>
 </body>
 </html>

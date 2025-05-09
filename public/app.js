@@ -1,83 +1,118 @@
-// 3.1. Lấy DOM elements
-const dateFromEl = document.getElementById('dateFrom')   // input ngày bắt đầu
-const dateToEl   = document.getElementById('dateTo')     // input ngày kết thúc
-const btnLoad    = document.getElementById('btnLoad')    // nút Xem
-const tableBody  = document.querySelector('#datatable tbody') // tbody của table
-const ctx        = document.getElementById('chart').getContext('2d') // context Chart.js
+// 1. Chờ DOM load xong mới bind event và khởi tạo
+document.addEventListener('DOMContentLoaded', () => {
+  // 2. Lấy các phần tử trên trang
+  const fromInput = document.getElementById('fromInput')   // Ô nhập ngày “Từ”
+  const toInput   = document.getElementById('toInput')     // Ô nhập ngày “Đến”
+  const viewBtn   = document.getElementById('viewBtn')     // Nút “Xem”
+  const tableBody = document.getElementById('table-body')  // <tbody> của bảng số liệu
+  const canvas    = document.getElementById('myChart')     // <canvas> cho Chart.js
 
-// 3.2. Khởi tạo Chart.js để vẽ line chart mực nước
-let lineChart = new Chart(ctx, {
-  type: 'line',         // Kiểu biểu đồ: đường
-  data: {
-    labels: [],         // Mảng thời gian (Time)
-    datasets: [{
-      label: 'Mực nước (cm)',  // Nhãn dataset
-      data: [],               // Mảng giá trị mucnuoc
-      fill: false,            // Không tô màu phía dưới đường
-      tension: 0.1            // Độ cong đường
-    }]
-  },
-  options: {
-    scales: {
-      x: {
-        display: true,
-        title: { display: true, text: 'Giờ' } // Nhãn trục X
-      },
-      y: {
-        display: true,
-        title: { display: true, text: 'Mực nước (cm)' } // Nhãn trục Y
+  let myChart = null                                    // Biến lưu instance Chart để cập nhật
+
+  /** 
+   * 3. Hàm lấy dữ liệu từ Netlify Function get-data
+   *    Gọi URL dạng:
+   *      /.netlify/functions/get-data?from=DD%2FMM%2FYYYY&to=...
+   */
+  async function fetchData() {
+    // 3.1. Đọc giá trị “Từ” và “Đến”, mã hóa URL
+    const from = encodeURIComponent(fromInput.value)  
+    const to   = encodeURIComponent(toInput.value)
+
+    // 3.2. Tạo URL endpoint
+    const url = `/.netlify/functions/get-data?from=${from}&to=${to}`
+
+    try {
+      // 3.3. Gọi fetch, chờ kết quả JSON
+      const res  = await fetch(url)
+      const data = await res.json()
+
+      // 3.4. Nếu có lỗi từ API, báo console
+      if (!res.ok) {
+        console.error('API lỗi:', data.error)
+        return
       }
+
+      // 3.5. Gửi dữ liệu về 2 hàm render
+      renderTable(data)
+      renderChart(data)
+    } catch (err) {
+      console.error('Lỗi fetchData():', err)
     }
   }
+
+  /**
+   * 4. Hàm vẽ bảng số liệu
+   *    Xóa sạch <tbody> cũ, đổ từng bản ghi vào một <tr>
+   */
+  function renderTable(data) {
+    // 4.1. Xóa hết các dòng cũ
+    tableBody.innerHTML = ''
+
+    // 4.2. Duyệt mảng data, mỗi phần tử là một bản ghi
+    data.forEach(record => {
+      // 4.3. Tạo <tr> mới
+      const tr = document.createElement('tr')
+
+      // 4.4. Tạo 6 <td> tương ứng: ID, date, time, mucnuoc, vol, cbe1x4x
+      ;['id','date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
+        const td = document.createElement('td')
+        td.textContent = record[key]  // gán text
+        tr.appendChild(td)            // chèn vào tr
+      })
+
+      // 4.5. Đưa tr vào tbody
+      tableBody.appendChild(tr)
+    })
+
+    // 4.6. Nếu >20 dòng, bật scroll (CSS đã cài sẵn)
+  }
+
+  /**
+   * 5. Hàm vẽ đồ thị Chart.js
+   *    Lấy mảng thời gian (time) và mảng mực nước (mucnuoc)
+   */
+  function renderChart(data) {
+    // 5.1. Lấy labels và values
+    const labels = data.map(r => r.time)           // mảng thời gian
+    const values = data.map(r => Number(r.mucnuoc))// mảng mực nước (số)
+
+    // 5.2. Nếu đã khởi Chart rồi, huỷ nó để vẽ mới
+    if (myChart) {
+      myChart.destroy()
+    }
+
+    // 5.3. Tạo Chart mới
+    myChart = new Chart(canvas.getContext('2d'), {
+      type: 'line',             // hoặc 'bar' tuỳ ý
+      data: {
+        labels,
+        datasets: [{
+          label: 'Mực nước (cm)',
+          data: values,
+          fill: false,         // không tô dưới đường
+          borderWidth: 2        // độ dày đường
+        }]
+      },
+      options: {
+        scales: {
+          x: { 
+            title: { display: true, text: 'Giờ' } 
+          },
+          y: { 
+            title: { display: true, text: 'Mực nước (cm)' },
+            beginAtZero: true 
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    })
+  }
+
+  // 6. Bắt sự kiện click nút “Xem”
+  viewBtn.addEventListener('click', fetchData)
+
+  // 7. Tự động load dữ liệu khi mở trang
+  fetchData()
 })
-
-// 3.3. Hàm loadData: fetch API, filter, render table + chart
-async function loadData() {
-  // 3.3.1. Fetch tất cả bản ghi từ backend
-  const res = await fetch('/api/data')
-  const records = await res.json() // mảng các object
-
-  // 3.3.2. Tính timestamp từ – đến
-  let fromTs = -Infinity
-  let toTs   = Infinity
-  if (dateFromEl.value) {
-    fromTs = new Date(dateFromEl.value).getTime() / 1000
-  }
-  if (dateToEl.value) {
-    // Cộng thêm 23:59:59 để bao cả ngày đến
-    toTs = new Date(dateToEl.value).getTime() / 1000 + 86399
-  }
-
-  // 3.3.3. Filter theo khoảng timestamp
-  const filtered = records.filter(r => {
-    // Ghép date + time thành Date object
-    const ts = new Date(`${r.date} ${r.time}`).getTime() / 1000
-    return ts >= fromTs && ts <= toTs
-  })
-
-  // 3.3.4. Render bảng 6 cột
-  tableBody.innerHTML = ''  // Xóa rows cũ
-  filtered.forEach(r => {
-    const tr = document.createElement('tr')
-    tr.innerHTML = `
-      <td>${r.id}</td>
-      <td>${r.date}</td>
-      <td>${r.time}</td>
-      <td>${r.mucnuoc}</td>
-      <td>${r.vol}</td>
-      <td>${r.cbe1x4x}</td>
-    `
-    tableBody.appendChild(tr)
-  })
-
-  // 3.3.5. Cập nhật dữ liệu cho Chart.js
-  lineChart.data.labels = filtered.map(r => r.time)       // Mảng giờ
-  lineChart.data.datasets[0].data = filtered.map(r => r.mucnuoc) // Mảng mucnuoc
-  lineChart.update()  // Vẽ lại biểu đồ
-}
-
-// 3.4. Gán event cho nút Xem
-btnLoad.addEventListener('click', loadData)
-
-// 3.5. Tự động load khi trang vừa mở
-loadData()
