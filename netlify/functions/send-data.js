@@ -1,44 +1,36 @@
-// 1. Import supabase client builder
+// netlify/functions/send-data.js
+
+// 1. Import builder của Supabase
 const { createClient } = require('@supabase/supabase-js')
 
-// 2. Khởi tạo Supabase với URL và anon key từ ENV
+// 2. Khởi Supabase client với ENV vars (đã cấu hình trên Netlify)
 const supabase = createClient(
-  process.env.SUPABASE_URL,     // Ví dụ https://xyz.supabase.co
-  process.env.SUPABASE_ANON_KEY  // Public anon key
+  process.env.SUPABASE_URL,     // URL project Supabase, ví dụ https://xyz.supabase.co
+  process.env.SUPABASE_ANON_KEY  // Public anon key (cấp quyền insert/query công khai)
 )
 
-// 3. Export handler để Netlify gọi
+// 3. Export handler để Netlify chạy như Lambda
 exports.handler = async function(event) {
-  // 4. Lấy raw query string (phần sau dấu '?'), ví dụ:
-  //    "id=F01774;date=07/05/2025;time=14:30;..."
+  // 4. Lấy rawQueryString (phần sau dấu “?” trong URL GET)
+  //    ví dụ "id=F01774;date=07/05/2025;time=14:30;..."
   const rawQS = event.rawQueryString || ''
 
-  // 5. Split thành các cặp key=value, tách qua ';' hoặc '&'
-  //    .filter(Boolean) để loại bỏ chuỗi rỗng
-  const pairs = rawQS
-    .split(/[&;]/)    // tách qua dấu & hoặc ;
-    .filter(Boolean)  // bỏ những entry rỗng
+  // 5. Tạo một URL tạm với dummy origin, gắn rawQS vào
+  //    URLSearchParams sau đó sẽ tự split cả ";" và "&"
+  const tmpUrl = new URL('http://dummy/?' + rawQS)
 
-  // 6. Parse từng "key=value" vào object params
-  const params = {}
-  for (let pair of pairs) {
-    const idx = pair.indexOf('=')
-    if (idx > 0) {
-      const key   = pair.substring(0, idx)      // trước dấu '='
-      const value = pair.substring(idx + 1)     // sau dấu '='
-      params[key] = value                       // gán vào params
-    }
-  }
+  // 6. Dễ dàng truy xuất param qua tmpUrl.searchParams
+  const params = tmpUrl.searchParams
 
-  // 7. Lấy 6 tham số cần thiết—hoặc null nếu không có
-  const id      = params.id      || null
-  const date    = params.date    || null
-  const time    = params.time    || null
-  const mucnuoc = params.mucnuoc || null
-  const vol     = params.vol     || null
-  const cbe1x4x = params.cbe1x4x || null
+  // 7. Lấy từng tham số; nếu không có sẽ trả về null
+  const id      = params.get('id')
+  const date    = params.get('date')
+  const time    = params.get('time')
+  const mucnuoc = params.get('mucnuoc')
+  const vol     = params.get('vol')
+  const cbe1x4x = params.get('cbe1x4x')
 
-  // 8. Validate: nếu thiếu tham số nào, trả về 400 Bad Request
+  // 8. Kiểm tra bắt buộc đủ 6 tham số
   if (!id || !date || !time || !mucnuoc || !vol || !cbe1x4x) {
     return {
       statusCode: 400,
@@ -49,9 +41,9 @@ exports.handler = async function(event) {
   }
 
   try {
-    // 9. Chuyển kiểu số cho mucnuoc và vol
-    const mu   = parseInt(mucnuoc, 10)
-    const vo   = parseInt(vol,     10)
+    // 9. Chuyển kiểu int cho mucnuoc và vol
+    const mu = parseInt(mucnuoc, 10)
+    const vo = parseInt(vol,     10)
 
     // 10. Ghi dữ liệu vào bảng sensor_data
     const { error } = await supabase
@@ -65,7 +57,7 @@ exports.handler = async function(event) {
         cbe1x4x      // text
       }])
 
-    // 11. Nếu Supabase trả về lỗi, phản hồi lại 500
+    // 11. Nếu Supabase có lỗi, trả về 500 kèm message
     if (error) {
       return {
         statusCode: 500,
@@ -73,7 +65,7 @@ exports.handler = async function(event) {
       }
     }
 
-    // 12. Thành công, trả về JSON xác nhận và echo lại dữ liệu
+    // 12. Thành công → phản hồi JSON echo lại
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -85,7 +77,7 @@ exports.handler = async function(event) {
       })
     }
   } catch (err) {
-    // 13. Bắt mọi exception khác, trả về 500
+    // 13. Bắt mọi exception khác
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
