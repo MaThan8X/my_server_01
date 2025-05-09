@@ -1,54 +1,50 @@
 // 1. Import createClient từ supabase-js để kết nối Supabase
 const { createClient } = require('@supabase/supabase-js')
 
-// 2. Khởi tạo Supabase client với URL và ANON key từ ENV
+// 2. Khởi tạo Supabase client với URL và Anon Key từ ENV
 const supabase = createClient(
-  process.env.SUPABASE_URL,     // biến SUPABASE_URL đã set trên Netlify
-  process.env.SUPABASE_ANON_KEY  // biến SUPABASE_ANON_KEY đã set trên Netlify
+  process.env.SUPABASE_URL,     // SUPABASE_URL đã set trên Netlify
+  process.env.SUPABASE_ANON_KEY  // SUPABASE_ANON_KEY đã set trên Netlify
 )
 
-// 3. Export handler (bắt buộc) để Netlify Functions gọi vào
+// 3. Export handler để Netlify gọi khi có HTTP request
 exports.handler = async function(event) {
-  // 4. Lấy phần value sau “?id=” do Netlify gom hết vào key "id"
-  //    Ví dụ event.queryStringParameters.id = "F01774;date=...;time=...;"
-  const rawValue = event.queryStringParameters.id || ''
+  // 4. Lấy object queryStringParameters 
+  //    Netlify tự parse cả dấu ';' và '&'
+  const q = event.queryStringParameters || {}
 
-  // 5. Prepend “id=” để khi split ta có “id=F01774” thay vì “F01774”
-  const rawString = `id=${rawValue}`
+  // 5. Lấy trực tiếp từng giá trị (hoặc undefined nếu không có)
+  const id      = q.id       || null
+  const date    = q.date     || null
+  const time    = q.time     || null
+  const mucnuoc = q.mucnuoc  || null
+  const vol     = q.vol      || null
+  const cbe1x4x = q.cbe1x4x  || null
 
-  // 6. Tách chuỗi theo dấu ';', lọc bỏ empty elements
-  const parts = rawString
-    .split(';')       // ["id=F01774", "date=07/05/2025", ... , ""]
-    .filter(p => p)   // loại bỏ phần cuối rỗng
-
-  // 7. Parse từng cặp "key=value" vào object params
-  const params = {}
-  parts.forEach(pair => {
-    const idx = pair.indexOf('=')      // tìm vị trí dấu '=' đầu tiên
-    if (idx > 0) {
-      const key   = pair.substring(0, idx)      // trước '=' là key
-      const value = pair.substring(idx + 1)     // sau '=' là value
-      params[key] = value                       // gán vào object
+  // 6. Kiểm tra bắt buộc: nếu thiếu bất kỳ đâu, trả về 400
+  if (!id || !date || !time || !mucnuoc || !vol || !cbe1x4x) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        error: 'Thiếu tham số: id, date, time, mucnuoc, vol hoặc cbe1x4x'
+      })
     }
-  })
-
-  // 8. Lấy từng giá trị cần thiết
-  const { id, date, time, mucnuoc, vol, cbe1x4x } = params
+  }
 
   try {
-    // 9. Thực hiện insert vào bảng sensor_data
-    const { data, error } = await supabase
+    // 7. Ghi vào bảng sensor_data
+    const { error } = await supabase
       .from('sensor_data')
       .insert([{
-        id,                                      // TEXT
-        date,                                    // TEXT
-        time,                                    // TEXT
-        mucnuoc: parseInt(mucnuoc, 10),          // INT
-        vol:    parseInt(vol,    10),            // INT
-        cbe1x4x                                  // TEXT
+        id,                             // TEXT
+        date,                           // TEXT
+        time,                           // TEXT
+        mucnuoc: parseInt(mucnuoc, 10), // INT
+        vol:    parseInt(vol,    10),   // INT
+        cbe1x4x                         // TEXT
       }])
 
-    // 10. Nếu insert lỗi, trả về 500 kèm message
+    // 8. Nếu Supabase trả về lỗi, chuyển tiếp 500
     if (error) {
       return {
         statusCode: 500,
@@ -56,20 +52,19 @@ exports.handler = async function(event) {
       }
     }
 
-    // 11. Thành công, trả về JSON xác nhận cùng dữ liệu đã parse
+    // 9. Thành công, phản hồi 200 với JSON xác nhận
     return {
       statusCode: 200,
       body: JSON.stringify({
-        status:   'received',
+        status: 'received',
         id, date, time,
         mucnuoc: Number(mucnuoc),
         vol:      Number(vol),
         cbe1x4x
       })
     }
-
   } catch (err) {
-    // 12. Bắt mọi exception khác, trả về 500
+    // 10. Bắt ngoại lệ bất kỳ, trả về 500
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
