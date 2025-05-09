@@ -1,47 +1,54 @@
-// 1. Import hàm createClient từ thư viện supabase-js
+// 1. Import createClient từ supabase-js để kết nối Supabase
 const { createClient } = require('@supabase/supabase-js')
 
-// 2. Khởi tạo client Supabase với hai biến môi trường
+// 2. Khởi tạo Supabase client với URL và ANON key từ ENV
 const supabase = createClient(
-  process.env.SUPABASE_URL,     // URL của project Supabase
-  process.env.SUPABASE_ANON_KEY  // Khóa public anon key
+  process.env.SUPABASE_URL,     // biến SUPABASE_URL đã set trên Netlify
+  process.env.SUPABASE_ANON_KEY  // biến SUPABASE_ANON_KEY đã set trên Netlify
 )
 
-// 3. Export hàm handler để Netlify gọi khi endpoint được truy cập
+// 3. Export handler (bắt buộc) để Netlify Functions gọi vào
 exports.handler = async function(event) {
-  // 4. Lấy toàn bộ chuỗi query sau dấu ? dưới key 'id'
-  //    (vì chúng ta dùng ; để phân tách, Netlify gom hết vào id)
-  const raw = event.queryStringParameters.id || ''
+  // 4. Lấy phần value sau “?id=” do Netlify gom hết vào key "id"
+  //    Ví dụ event.queryStringParameters.id = "F01774;date=...;time=...;"
+  const rawValue = event.queryStringParameters.id || ''
 
-  // 5. Tách chuỗi raw thành mảng từng cặp 'key=value'
-  const parts = raw.split(';')
-  const params = {}  // Object để lưu giá trị sau khi tách
+  // 5. Prepend “id=” để khi split ta có “id=F01774” thay vì “F01774”
+  const rawString = `id=${rawValue}`
 
+  // 6. Tách chuỗi theo dấu ';', lọc bỏ empty elements
+  const parts = rawString
+    .split(';')       // ["id=F01774", "date=07/05/2025", ... , ""]
+    .filter(p => p)   // loại bỏ phần cuối rỗng
+
+  // 7. Parse từng cặp "key=value" vào object params
+  const params = {}
   parts.forEach(pair => {
-    const [key, ...rest] = pair.split('=')
-    if (key) {
-      // 6. Gán params[key] = phần còn lại nối lại (trường hợp value có dấu '=')
-      params[key] = rest.join('=')
+    const idx = pair.indexOf('=')      // tìm vị trí dấu '=' đầu tiên
+    if (idx > 0) {
+      const key   = pair.substring(0, idx)      // trước '=' là key
+      const value = pair.substring(idx + 1)     // sau '=' là value
+      params[key] = value                       // gán vào object
     }
   })
 
-  // 7. Lấy từng giá trị cụ thể từ object params
+  // 8. Lấy từng giá trị cần thiết
   const { id, date, time, mucnuoc, vol, cbe1x4x } = params
 
   try {
-    // 8. Thực hiện insert một bản ghi vào bảng 'sensor_data'
+    // 9. Thực hiện insert vào bảng sensor_data
     const { data, error } = await supabase
       .from('sensor_data')
       .insert([{
-        id,
-        date,
-        time,
-        mucnuoc: parseInt(mucnuoc,  10), // chuyển string sang int
-        vol:    parseInt(vol,       10),
-        cbe1x4x                         // giữ nguyên chuỗi
+        id,                                      // TEXT
+        date,                                    // TEXT
+        time,                                    // TEXT
+        mucnuoc: parseInt(mucnuoc, 10),          // INT
+        vol:    parseInt(vol,    10),            // INT
+        cbe1x4x                                  // TEXT
       }])
 
-    // 9. Nếu có lỗi từ Supabase, trả về status 500 cùng thông báo
+    // 10. Nếu insert lỗi, trả về 500 kèm message
     if (error) {
       return {
         statusCode: 500,
@@ -49,21 +56,20 @@ exports.handler = async function(event) {
       }
     }
 
-    // 10. Thành công, trả về status 200 và JSON xác nhận
+    // 11. Thành công, trả về JSON xác nhận cùng dữ liệu đã parse
     return {
       statusCode: 200,
       body: JSON.stringify({
         status:   'received',
-        id,
-        date,
-        time,
+        id, date, time,
         mucnuoc: Number(mucnuoc),
         vol:      Number(vol),
         cbe1x4x
       })
     }
+
   } catch (err) {
-    // 11. Bắt bất kỳ ngoại lệ nào và trả về lỗi 500
+    // 12. Bắt mọi exception khác, trả về 500
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
