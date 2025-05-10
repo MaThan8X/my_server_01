@@ -1,118 +1,99 @@
-// 1. Chờ DOM load xong mới bind event và khởi tạo
+// public/app.js
+
+let selectedId = '';    // ID đang chọn ('' = tất cả)
+let waterChart = null, voltChart = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  // 2. Lấy các phần tử trên trang
-  const fromInput = document.getElementById('fromInput')   // Ô nhập ngày “Từ”
-  const toInput   = document.getElementById('toInput')     // Ô nhập ngày “Đến”
-  const viewBtn   = document.getElementById('viewBtn')     // Nút “Xem”
-  const tableBody = document.getElementById('table-body')  // <tbody> của bảng số liệu
-  const canvas    = document.getElementById('myChart')     // <canvas> cho Chart.js
+  const fromInput = document.getElementById('fromInput');
+  const toInput   = document.getElementById('toInput');
+  const viewBtn   = document.getElementById('viewBtn');
 
-  let myChart = null                                    // Biến lưu instance Chart để cập nhật
+  // 1. Load danh sách Mã Trạm
+  async function loadStations() {
+    const res = await fetch('/.netlify/functions/get-ids');
+    const ids = await res.json();
+    const ul  = document.getElementById('stations');
+    ul.innerHTML = '<li data-id="">Tất cả</li>' +
+      ids.map(id => `<li data-id="${id}">${id}</li>`).join('');
+    ul.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        ul.querySelectorAll('li').forEach(x => x.classList.remove('active'));
+        li.classList.add('active');
+        selectedId = li.dataset.id;
+        fetchData();
+      });
+    });
+  }
 
-  /** 
-   * 3. Hàm lấy dữ liệu từ Netlify Function get-data
-   *    Gọi URL dạng:
-   *      /.netlify/functions/get-data?from=DD%2FMM%2FYYYY&to=...
-   */
+  // 2. Fetch dữ liệu (có lọc id)
   async function fetchData() {
-    // 3.1. Đọc giá trị “Từ” và “Đến”, mã hóa URL
-    const from = encodeURIComponent(fromInput.value)  
-    const to   = encodeURIComponent(toInput.value)
-
-    // 3.2. Tạo URL endpoint
-    const url = `/.netlify/functions/get-data?from=${from}&to=${to}`
-
-    try {
-      // 3.3. Gọi fetch, chờ kết quả JSON
-      const res  = await fetch(url)
-      const data = await res.json()
-
-      // 3.4. Nếu có lỗi từ API, báo console
-      if (!res.ok) {
-        console.error('API lỗi:', data.error)
-        return
-      }
-
-      // 3.5. Gửi dữ liệu về 2 hàm render
-      renderTable(data)
-      renderChart(data)
-    } catch (err) {
-      console.error('Lỗi fetchData():', err)
-    }
+    const from = encodeURIComponent(fromInput.value);
+    const to   = encodeURIComponent(toInput.value);
+    let url = `/.netlify/functions/get-data?from=${from}&to=${to}`;
+    if (selectedId) url += `&id=${selectedId}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    renderTable(data);
+    renderCharts(data);
   }
 
-  /**
-   * 4. Hàm vẽ bảng số liệu
-   *    Xóa sạch <tbody> cũ, đổ từng bản ghi vào một <tr>
-   */
+  // 3. Vẽ bảng dữ liệu
   function renderTable(data) {
-    // 4.1. Xóa hết các dòng cũ
-    tableBody.innerHTML = ''
-
-    // 4.2. Duyệt mảng data, mỗi phần tử là một bản ghi
-    data.forEach(record => {
-      // 4.3. Tạo <tr> mới
-      const tr = document.createElement('tr')
-
-      // 4.4. Tạo 6 <td> tương ứng: ID, date, time, mucnuoc, vol, cbe1x4x
-      ;['id','date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
-        const td = document.createElement('td')
-        td.textContent = record[key]  // gán text
-        tr.appendChild(td)            // chèn vào tr
-      })
-
-      // 4.5. Đưa tr vào tbody
-      tableBody.appendChild(tr)
-    })
-
-    // 4.6. Nếu >20 dòng, bật scroll (CSS đã cài sẵn)
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
+    const limit = selectedId ? 10 : 30;
+    data.slice(0, limit).forEach(r => {
+      const tr = document.createElement('tr');
+      ['ID','Ngày','Giờ','Mục nước','Vol','CBE1X4X'].forEach(col => {
+        const td = document.createElement('td');
+        td.textContent = r[col];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
   }
 
-  /**
-   * 5. Hàm vẽ đồ thị Chart.js
-   *    Lấy mảng thời gian (time) và mảng mực nước (mucnuoc)
-   */
-  function renderChart(data) {
-    // 5.1. Lấy labels và values
-    const labels = data.map(r => r.time)           // mảng thời gian
-    const values = data.map(r => Number(r.mucnuoc))// mảng mực nước (số)
+  // 4. Vẽ/ cập nhật biểu đồ
+  function renderCharts(data) {
+    const labels    = data.map(r => `${r['Ngày']} ${r['Giờ']}`);
+    const waterData = data.map(r => Number(r['Mục nước']));
+    const voltData  = data.map(r => Number(r['Vol']));
 
-    // 5.2. Nếu đã khởi Chart rồi, huỷ nó để vẽ mới
-    if (myChart) {
-      myChart.destroy()
+    // Chart mực nước
+    if (!waterChart) {
+      waterChart = new Chart(
+        document.getElementById('myChart').getContext('2d'),
+        {
+          type: 'line',
+          data: { labels, datasets: [{ label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2 }] },
+          options: { responsive:true, scales:{ x:{display:true}, y:{display:true, beginAtZero:true} } }
+        }
+      );
+    } else {
+      waterChart.data.labels = labels;
+      waterChart.data.datasets[0].data = waterData;
+      waterChart.update();
     }
 
-    // 5.3. Tạo Chart mới
-    myChart = new Chart(canvas.getContext('2d'), {
-      type: 'line',             // hoặc 'bar' tuỳ ý
-      data: {
-        labels,
-        datasets: [{
-          label: 'Mực nước (cm)',
-          data: values,
-          fill: false,         // không tô dưới đường
-          borderWidth: 2        // độ dày đường
-        }]
-      },
-      options: {
-        scales: {
-          x: { 
-            title: { display: true, text: 'Giờ' } 
-          },
-          y: { 
-            title: { display: true, text: 'Mực nước (cm)' },
-            beginAtZero: true 
-          }
-        },
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    })
+    // Chart điện áp
+    if (!voltChart) {
+      voltChart = new Chart(
+        document.getElementById('voltChart').getContext('2d'),
+        {
+          type: 'line',
+          data: { labels, datasets: [{ label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2 }] },
+          options: { responsive:true, scales:{ x:{display:true}, y:{display:true, beginAtZero:true} } }
+        }
+      );
+    } else {
+      voltChart.data.labels = labels;
+      voltChart.data.datasets[0].data = voltData;
+      voltChart.update();
+    }
   }
 
-  // 6. Bắt sự kiện click nút “Xem”
-  viewBtn.addEventListener('click', fetchData)
-
-  // 7. Tự động load dữ liệu khi mở trang
-  fetchData()
-})
+  // 5. Events
+  viewBtn.addEventListener('click', fetchData);
+  loadStations();
+  fetchData();
+});

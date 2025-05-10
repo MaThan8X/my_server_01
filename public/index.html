@@ -1,59 +1,51 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Cảm Biến</title>
-  
-  <!-- 1. Link tới file CSS chính -->
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- 2. Load Chart.js từ CDN để vẽ đồ thị -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
 <body>
-  <!-- 3. Tiêu đề trang -->
-  <h1>Dashboard Cảm Biến</h1>
+  <!-- Sidebar Mã Trạm -->
+  <aside id="station-list">
+    <h3>Mã Trạm</h3>
+    <ul id="stations"></ul>
+  </aside>
 
-  <!-- 4. Khối lọc theo ngày -->
-  <div class="filter">
-    <!-- 4.1 Nhãn và ô nhập ngày bắt đầu -->
-    <label for="fromInput">Từ:</label>
-    <input id="fromInput" type="date" />
+  <!-- Nội dung chính -->
+  <div id="main-content">
+    <h1>Dashboard Cảm Biến</h1>
 
-    <!-- 4.2 Nhãn và ô nhập ngày kết thúc -->
-    <label for="toInput">Đến:</label>
-    <input id="toInput" type="date" />
+    <!-- Lọc theo ngày -->
+    <div class="filter">
+      <label for="fromInput">Từ:</label>
+      <input id="fromInput" type="date" />
+      <label for="toInput">Đến:</label>
+      <input id="toInput" type="date" />
+      <button id="viewBtn">Xem</button>
+    </div>
 
-    <!-- 4.3 Nút bấm để lấy dữ liệu -->
-    <button id="viewBtn">Xem</button>
+    <!-- Biểu đồ mực nước -->
+    <div class="chart-container">
+      <canvas id="myChart"></canvas>
+    </div>
+
+    <!-- Biểu đồ điện áp -->
+    <div class="chart-container">
+      <canvas id="voltChart"></canvas>
+    </div>
+
+    <!-- Bảng dữ liệu -->
+    <div class="table-container" id="tableContainer">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Ngày</th>
+            <th>Giờ</th>
+            <th>Mực nước</th>
+            <th>Vol</th>
+            <th>CBE1X4X</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- 5. Khung bảng dữ liệu -->
-  <div class="table-container">
-    <table>
-      <!-- 5.1 Phần đầu bảng -->
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Ngày</th>
-          <th>Giờ</th>
-          <th>Mực nước</th>
-          <th>Vol</th>
-          <th>CBE1X4X</th>
-        </tr>
-      </thead>
-      <!-- 5.2 Phần thân bảng, JS sẽ chèn các <tr> ở đây -->
-      <tbody id="table-body"></tbody>
-    </table>
-  </div>
-
-  <!-- 6. Khung vẽ đồ thị -->
-  <div class="chart-container">
-    <canvas id="myChart"></canvas>
-  </div>
-
-  <!-- 7. File JavaScript front-end chứa logic fetch/render -->
+  <!-- Script chính -->
   <script src="app.js"></script>
 </body>
-</html>

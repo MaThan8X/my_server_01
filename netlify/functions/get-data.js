@@ -1,51 +1,30 @@
-// 1. Import Supabase client
-const { createClient } = require('@supabase/supabase-js')
+const path = require('path');
+const xlsx = require('xlsx');
 
-// 2. Khởi Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-)
+exports.handler = async (event) => {
+  const { from, to, id } = event.queryStringParameters || {};
+  const p = path.resolve(__dirname, '../../data/sensor_data.xlsx');
+  const wb = xlsx.readFile(p);
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  let rows = xlsx.utils.sheet_to_json(sheet);
 
-// 3. Export handler
-exports.handler = async function(event) {
-  try {
-    // 4. Lấy query params (nếu có): from, to (định dạng dd/MM/yyyy)
-    const url = new URL(event.rawUrl, 'http://dummy')
-    const from = url.searchParams.get('from')
-    const to   = url.searchParams.get('to')
+  // Lọc ngày
+  rows = rows.filter(r => {
+    const d = new Date(r['Ngày']);
+    if (from && d < new Date(from)) return false;
+    if (to   && d > new Date(to))   return false;
+    return true;
+  });
 
-    // 5. Build query Supabase
-    let query = supabase
-      .from('sensor_data')
-      .select('id, date, time, mucnuoc, vol, cbe1x4x, created_at')
-      .order('created_at', { ascending: false })
+  // Lọc ID
+  if (id) rows = rows.filter(r => r.ID === id);
 
-    // 6. Nếu có giới hạn thời gian, apply filter
-    if (from) query = query.gte('date', from)
-    if (to)   query = query.lte('date', to)
+  // Sort giảm dần
+  rows.sort((a, b) => new Date(`${b['Ngày']}T${b['Giờ']}`) - new Date(`${a['Ngày']}T${a['Giờ']}`));
 
-    // 7. Thực thi và lấy data
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Supabase get-data error:', error)
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message })
-      }
-    }
-
-    // 8. Trả về JSON mảng bản ghi
-    return {
-      statusCode: 200,
-      body: JSON.stringify(data)
-    }
-  } catch (err) {
-    console.error('Exception in get-data:', err)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    }
-  }
-}
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rows)
+  };
+};
