@@ -1,3 +1,17 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Cảm Biến</title>
+  <!-- Link tới CSS chính -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Chart.js từ CDN (cần cho các biểu đồ) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
 <body>
   <!-- Sidebar Mã Trạm -->
   <aside id="station-list">
@@ -9,7 +23,7 @@
   <div id="main-content">
     <h1>Dashboard Cảm Biến</h1>
 
-    <!-- Lọc theo ngày -->
+    <!-- Bộ lọc ngày -->
     <div class="filter">
       <label for="fromInput">Từ:</label>
       <input id="fromInput" type="date" />
@@ -46,6 +60,7 @@
     </div>
   </div>
 
-  <!-- Script chính -->
+  <!-- Script chính của ứng dụng -->
   <script src="app.js"></script>
 </body>
+</html>
