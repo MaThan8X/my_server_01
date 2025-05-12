@@ -9,29 +9,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const stationTbody = document.getElementById('stations');
   const chartArea = document.getElementById('chart-area');
 
-  // 1️⃣ Load sidebar IDs thành các <tr> trong table
+  // 1️⃣ Load sidebar IDs, thử get-ids trước, fallback dùng get-data
   async function loadStations() {
+    let ids = [];
     try {
       const res = await fetch('/.netlify/functions/get-ids');
-      const ids = await res.json();
-      // Tạo row cho 'Tất cả' + từng ID
-      const rows = ['<tr data-id=""><td>Tất cả</td></tr>']
-        .concat(ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`));
-      stationTbody.innerHTML = rows.join('');
-      // Đính sự kiện click
-      stationTbody.querySelectorAll('tr').forEach(tr => {
-        tr.addEventListener('click', () => {
-          stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
-          tr.classList.add('active');
-          selectedId = tr.dataset.id;
-          fetchData();
-        });
-      });
-      // Active mặc định 'Tất cả'
-      stationTbody.querySelector('tr[data-id=""]').classList.add('active');
+      if (res.ok) ids = await res.json();
     } catch (err) {
-      console.error('Error loading stations:', err);
+      console.error('get-ids failed:', err);
     }
+    // Nếu không có gì, fallback lấy từ get-data
+    if (!ids.length) {
+      try {
+        const res2 = await fetch('/.netlify/functions/get-data');
+        const all = await res2.json();
+        ids = Array.from(new Set(all.map(r => r.id))).sort().reverse();
+      } catch (err) {
+        console.error('fallback get-data IDs failed:', err);
+      }
+    }
+
+    // Tạo rows: 'Tất cả' + các ID
+    const rows = ['<tr data-id=""><td>Tất cả</td></tr>']
+      .concat(ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`));
+    stationTbody.innerHTML = rows.join('');
+
+    // Đính sự kiện click
+    stationTbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => {
+        stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+        selectedId = tr.dataset.id;
+        fetchData();
+      });
+    });
+    // Active mặc định 'Tất cả'
+    const first = stationTbody.querySelector('tr[data-id=""]');
+    if (first) first.classList.add('active');
   }
 
   // 2️⃣ Fetch và render dữ liệu
