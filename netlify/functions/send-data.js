@@ -3,15 +3,31 @@
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
-exports.handler = async (event) => {
-  // Khởi Supabase client
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
+// Khởi Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
-  // Phân tích chuỗi rawQueryString
-  const params = event.rawQueryString
+exports.handler = async (event) => {
+  // 1. Lấy raw query string; nếu undefined thì fallback
+  let raw = event.rawQueryString;
+  if (!raw) {
+    // Khi semicolons, event.queryStringParameters.id chứa toàn bộ chuỗi
+    const paramsObj = event.queryStringParameters || {};
+    // Nếu chỉ có 1 key (id) bao gồm cả chuỗi phân tách, raw = that value
+    if (Object.keys(paramsObj).length === 1 && paramsObj.id) {
+      raw = paramsObj.id;
+    } else {
+      // Hoặc ghép lại từ tất cả keys (nếu dùng & bình thường)
+      raw = Object.entries(paramsObj)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(';');
+    }
+  }
+
+  // 2. Parse các cặp key=value phân tách bằng ;
+  const params = raw
     .split(';')
     .reduce((acc, pair) => {
       const [key, value] = pair.split('=');
@@ -20,7 +36,7 @@ exports.handler = async (event) => {
     }, {});
 
   try {
-    // Chèn dữ liệu vào bảng sensor_data
+    // 3. Chèn bản ghi vào Supabase
     const { data, error } = await supabase
       .from('sensor_data')
       .insert([{
@@ -34,6 +50,7 @@ exports.handler = async (event) => {
 
     if (error) throw error;
 
+    // 4. Trả về kết quả
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
