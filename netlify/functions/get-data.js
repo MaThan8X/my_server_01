@@ -1,30 +1,42 @@
-const path = require('path');
-const xlsx = require('xlsx');
+// netlify/functions/get-data.js
+
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
+
+// Khởi Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 exports.handler = async (event) => {
   const { from, to, id } = event.queryStringParameters || {};
-  const p = path.resolve(__dirname, '../../data/sensor_data.xlsx');
-  const wb = xlsx.readFile(p);
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  let rows = xlsx.utils.sheet_to_json(sheet);
+  try {
+    // Xây dựng query
+    let query = supabase.from('sensor_data').select('*');
+    if (id)   query = query.eq('id', id);
+    if (from) query = query.gte('date', from);
+    if (to)   query = query.lte('date', to);
+    // Sắp xếp giảm dần theo date rồi time
+    query = query
+      .order('date', { ascending: false })
+      .order('time', { ascending: false });
 
-  // Lọc ngày
-  rows = rows.filter(r => {
-    const d = new Date(r['Ngày']);
-    if (from && d < new Date(from)) return false;
-    if (to   && d > new Date(to))   return false;
-    return true;
-  });
+    // Thực thi
+    const { data, error } = await query;
+    if (error) throw error;
 
-  // Lọc ID
-  if (id) rows = rows.filter(r => r.ID === id);
-
-  // Sort giảm dần
-  rows.sort((a, b) => new Date(`${b['Ngày']}T${b['Giờ']}`) - new Date(`${a['Ngày']}T${a['Giờ']}`));
-
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rows)
-  };
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    };
+  } catch (error) {
+    console.error('get-data error:', error.message);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: error.message })
+    };
+  }
 };

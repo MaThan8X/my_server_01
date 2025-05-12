@@ -1,92 +1,50 @@
 // netlify/functions/send-data.js
 
-// 1️⃣ Import Supabase
-const { createClient } = require('@supabase/supabase-js')
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-)
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
-// 2️⃣ Export handler
-exports.handler = async function(event, context) {
-  // —————— Debug logging ——————
-  console.log('🏷️ event.rawQueryString =', event.rawQueryString)
-  console.log('🏷️ event.rawUrl         =', event.rawUrl)
+exports.handler = async (event) => {
+  // Khởi Supabase client
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
 
-  // 3️⃣ Lấy queryString, ưu tiên rawQueryString, fallback rawUrl
-  let rawQS = event.rawQueryString
-  if (!rawQS || rawQS === '') {
-    // event.rawUrl = "/.netlify/functions/send-data?id=...;date=...;"
-    const parts = (event.rawUrl || '').split('?')
-    rawQS = parts[1] || ''
-  }
-
-  // 4️⃣ Thay ';' thành '&' để URLSearchParams nhận
-  rawQS = rawQS.replace(/;/g, '&')
-
-  // 5️⃣ Tạo URL dummy và parse params
-  const tmp = new URL('http://dummy/?' + rawQS)
-  const params = tmp.searchParams
-
-  // 6️⃣ Lấy các tham số
-  const id      = params.get('id')
-  const date    = params.get('date')
-  const time    = params.get('time')
-  const mucnuoc = params.get('mucnuoc')
-  const vol     = params.get('vol')
-  const cbe1x4x = params.get('cbe1x4x')
-
-  console.log('🎯 Parsed params:', { id, date, time, mucnuoc, vol, cbe1x4x })
-
-  // 7️⃣ Validate
-  if (!id || !date || !time || !mucnuoc || !vol || !cbe1x4x) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        error: 'Thiếu tham số: id, date, time, mucnuoc, vol hoặc cbe1x4x'
-      })
-    }
-  }
+  // Phân tích chuỗi rawQueryString
+  const params = event.rawQueryString
+    .split(';')
+    .reduce((acc, pair) => {
+      const [key, value] = pair.split('=');
+      if (key && value) acc[key] = value;
+      return acc;
+    }, {});
 
   try {
-    // 8️⃣ Chuyển kiểu số
-    const mu = parseInt(mucnuoc, 10)
-    const vo = parseInt(vol,     10)
-
-    // 9️⃣ Insert vào Supabase
-    const { error } = await supabase
+    // Chèn dữ liệu vào bảng sensor_data
+    const { data, error } = await supabase
       .from('sensor_data')
       .insert([{
-        id, date, time,
-        mucnuoc: mu,
-        vol:      vo,
-        cbe1x4x
-      }])
+        id:      params.id,
+        date:    params.date,
+        time:    params.time,
+        mucnuoc: Number(params.mucnuoc),
+        vol:     Number(params.vol),
+        cbe1x4x: params.cbe1x4x
+      }]);
 
-    if (error) {
-      console.error('❌ Supabase error:', error)
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message })
-      }
-    }
+    if (error) throw error;
 
-    // 🔟 Thành công
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        status:   'received',
-        id, date, time,
-        mucnuoc: mu,
-        vol:      vo,
-        cbe1x4x
-      })
-    }
-  } catch (err) {
-    console.error('⚠️ Exception:', err)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'received', ...params })
+    };
+  } catch (error) {
+    console.error('send-data error:', error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'error', message: error.message })
+    };
   }
-}
+};

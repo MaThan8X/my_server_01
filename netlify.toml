@@ -1,7 +1,6 @@
 [build]
-  publish   = "public"              # Thư mục chứa front-end tĩnh
-  functions = "netlify/functions"   # Thư mục chứa các function serverless
+  publish   = "public"
+  functions = "netlify/functions"
 
 [dev]
-  command = "netlify dev"           # (tuỳ chọn) để chạy local với netlify-cli
-  port    = 8888                    # Frontend + Function local sẽ chạy trên cổng này
+  port = 8888   # Chỉ define port, không lặp lại 'netlify dev'
