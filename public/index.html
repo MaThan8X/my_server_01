@@ -10,11 +10,17 @@
 </head>
 <body>
   <div id="container">
+    <!-- Sidebar Mã Trạm dưới dạng bảng -->
     <aside id="station-list">
-      <h3>Mã Trạm</h3>
-      <ul id="stations"></ul>
+      <table>
+        <thead>
+          <tr><th>Mã Trạm</th></tr>
+        </thead>
+        <tbody id="stations"></tbody>
+      </table>
     </aside>
 
+    <!-- Nội dung chính -->
     <main id="main-view">
       <h1>Dashboard Cảm Biến</h1>
       <div class="filter">
@@ -25,12 +31,13 @@
         <button id="viewBtn">Xem</button>
       </div>
 
-      <!-- CHARTS AREA (mặc định ẩn) -->
+      <!-- Charts (ẩn nếu selectedId === '') -->
       <div id="chart-area" class="chart-wrapper">
         <canvas id="waterChart"></canvas>
         <canvas id="voltChart"></canvas>
       </div>
 
+      <!-- Bảng dữ liệu chính -->
       <div class="table-wrapper">
         <table>
           <thead>
