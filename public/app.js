@@ -13,26 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadStations() {
     try {
       const res = await fetch('/.netlify/functions/get-ids');
-      if (!res.ok) throw new Error('Status ' + res.status);
+      if (!res.ok) throw new Error('get-ids status ' + res.status);
       const ids = await res.json();
-      // Build LI list
+      // Tạo li list
       const frag = document.createDocumentFragment();
       // 'Tất cả'
       const liAll = document.createElement('li');
       liAll.textContent = 'Tất cả';
       liAll.dataset.id = '';
       frag.appendChild(liAll);
-      // IDs
+      // Các ID
       ids.forEach(id => {
         const li = document.createElement('li');
         li.textContent = id;
         li.dataset.id = id;
         frag.appendChild(li);
       });
-      // Inject
       stationList.innerHTML = '';
       stationList.appendChild(frag);
-      // Event listeners
+      // Event
       stationList.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
           stationList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
           fetchData();
         });
       });
-      // Default active
+      // Active mặc định
       stationList.querySelector('li[data-id=""]').classList.add('active');
     } catch (err) {
       console.error('Error loading stations:', err);
@@ -87,31 +86,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
     const voltData  = data.map(r => Number(r.vol));
-    // Water
     if (!waterChart) {
       waterChart = new Chart(
         document.getElementById('waterChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Mực nước (cm)',data:waterData,fill:false,borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels,datasets:[{label:'Mực nước (cm)',data:waterData,fill:false,borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
-      waterChart.data.labels = labels;
-      waterChart.data.datasets[0].data = waterData;
-      waterChart.update();
+      waterChart.data.labels = labels; waterChart.data.datasets[0].data = waterData; waterChart.update();
     }
-    // Volt
     if (!voltChart) {
       voltChart = new Chart(
         document.getElementById('voltChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Điện áp (VoL)',data:voltData,fill:false,borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels,datasets:[{label:'Điện áp (VoL)',data:voltData,fill:false,borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
-      voltChart.data.labels = labels;
-      voltChart.data.datasets[0].data = voltData;
-      voltChart.update();
+      voltChart.data.labels = labels; voltChart.data.datasets[0].data = voltData; voltChart.update();
     }
   }
 
-  // Init
+  // Initialize
   viewBtn.addEventListener('click', fetchData);
   loadStations();
   fetchData();
