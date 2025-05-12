@@ -9,32 +9,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const stationTbody = document.getElementById('stations');
   const chartArea = document.getElementById('chart-area');
 
-  // Load sidebar IDs
+  // 1️⃣ Load sidebar IDs thành các <tr> trong table
   async function loadStations() {
-    const res = await fetch('/.netlify/functions/get-ids');
-    const ids = await res.json();
-
-    // Build rows
-    let html = '<tr data-id=""><td>Tất cả</td></tr>' +
-      ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`).join('');
-    stationTbody.innerHTML = html;
-
-    // Attach click events
-    stationTbody.querySelectorAll('tr').forEach(tr => {
-      tr.addEventListener('click', () => {
-        stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
-        tr.classList.add('active');
-        selectedId = tr.dataset.id;
-        fetchData();
+    try {
+      const res = await fetch('/.netlify/functions/get-ids');
+      const ids = await res.json();
+      // Tạo row cho 'Tất cả' + từng ID
+      const rows = ['<tr data-id=""><td>Tất cả</td></tr>']
+        .concat(ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`));
+      stationTbody.innerHTML = rows.join('');
+      // Đính sự kiện click
+      stationTbody.querySelectorAll('tr').forEach(tr => {
+        tr.addEventListener('click', () => {
+          stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+          tr.classList.add('active');
+          selectedId = tr.dataset.id;
+          fetchData();
+        });
       });
-    });
-
-    // Default active 'Tất cả'
-    stationTbody.querySelector('tr[data-id=""]').classList.add('active');
+      // Active mặc định 'Tất cả'
+      stationTbody.querySelector('tr[data-id=""]').classList.add('active');
+    } catch (err) {
+      console.error('Error loading stations:', err);
+    }
   }
 
-  // Fetch data and toggle charts
+  // 2️⃣ Fetch và render dữ liệu
   async function fetchData() {
+    // Show/hide chart area
     if (selectedId) chartArea.classList.add('active-charts');
     else chartArea.classList.remove('active-charts');
 
@@ -45,42 +47,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let url = '/.netlify/functions/get-data';
     if (params.length) url += '?' + params.join('&');
-
-    const res  = await fetch(url);
-    const data = await res.json();
-
-    renderTable(data);
-    if (selectedId) renderCharts(data);
+    try {
+      const res  = await fetch(url);
+      const data = await res.json();
+      renderTable(data);
+      if (selectedId) renderCharts(data);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    }
   }
 
-  // Render table
+  // 3️⃣ Render bảng dữ liệu, luôn có cột ID
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
     const limit = selectedId ? 10 : 30;
-
     data.slice(0, limit).forEach(r => {
       const tr = document.createElement('tr');
-      // ID
-      const tdId = document.createElement('td'); tdId.textContent = r.id; tr.appendChild(tdId);
-      // Other cols
+      // Cột ID
+      const tdId = document.createElement('td');
+      tdId.textContent = r.id;
+      tr.appendChild(tdId);
+      // Các cột tiếp theo
       ['date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
-        const td = document.createElement('td'); td.textContent = r[key]; tr.appendChild(td);
+        const td = document.createElement('td');
+        td.textContent = r[key];
+        tr.appendChild(td);
       });
       tbody.appendChild(tr);
     });
   }
 
-  // Render charts
+  // 4️⃣ Render / cập nhật Chart.js
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
     const voltData  = data.map(r => Number(r.vol));
 
+    // Chart mực nước
     if (!waterChart) {
       waterChart = new Chart(
         document.getElementById('waterChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2}]}, options:{responsive:true} }
+        {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Mực nước (cm)', data: waterData, fill: false, borderWidth: 2 }] },
+          options: { responsive: true }
+        }
       );
     } else {
       waterChart.data.labels = labels;
@@ -88,10 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
       waterChart.update();
     }
 
+    // Chart điện áp
     if (!voltChart) {
       voltChart = new Chart(
         document.getElementById('voltChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2}]}, options:{responsive:true} }
+        {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Điện áp (VoL)', data: voltData, fill: false, borderWidth: 2 }] },
+          options: { responsive: true }
+        }
       );
     } else {
       voltChart.data.labels = labels;
@@ -100,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Initialize
+  // Khởi tạo
   viewBtn.addEventListener('click', fetchData);
   loadStations();
   fetchData();
