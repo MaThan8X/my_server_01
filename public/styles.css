@@ -3,103 +3,32 @@
 body, html { height: 100%; font-family: sans-serif; }
 
 /* Container chính */
-#container {
-  display: flex;
-  height: 100%;
-}
+#container { display: flex; height: 100%; }
 
-/* Sidebar Mã Trạm dưới dạng bảng */
-#station-list {
-  width: 200px;
-  padding: 0.5rem;
-  background: #fafafa;
-  border-right: 1px solid #ddd;
-  overflow: hidden;
-}
-#station-list table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-#station-list thead tr {
-  display: table;
-  width: 100%;
-}
-#station-list tbody {
-  display: block;
-  max-height: calc(30 * 2rem);
-  overflow-y: auto;
-}
-#station-list tbody tr {
-  display: table;
-  width: 100%;
-}
-#station-list th,
-#station-list td {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  text-align: center;
-  word-wrap: break-word;
-}
-#station-list tbody tr:hover {
-  background: #eef5ff;
-}
-#station-list tbody tr.active td {
-  background: #007acc;
-  color: #fff;
-}
+/* Sidebar Mã Trạm */
+#station-list { width: 200px; padding: 0.5rem; background: #fafafa; border-right: 1px solid #ddd; overflow: hidden; }
+#station-list table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+#station-list thead tr { display: table; width: 100%; }
+#station-list tbody { display: block; max-height: calc(30 * 2rem); overflow-y: auto; }
+#station-list tbody tr { display: table; width: 100%; cursor: pointer; }
+#station-list th, #station-list td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+#station-list tbody tr:hover { background: #eef5ff; }
+#station-list tbody tr.active td { background: #007acc; color: #fff; }
 
 /* Main content */
-#main-view {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+#main-view { flex: 1; padding: 1rem; display: flex; flex-direction: column; overflow: hidden; }
 
 /* Filter */
-.filter {
-  margin-bottom: 1rem;
-}
-.filter input,
-.filter button {
-  margin-left: 0.5rem;
-  margin-right: 1rem;
-  padding: 0.3rem 0.5rem;
-}
+.filter { margin-bottom: 1rem; }
+.filter input, .filter button { margin-left: 0.5rem; margin-right: 1rem; padding: 0.3rem 0.5rem; }
 
-/* Charts */
-#chart-area {
-  display: none;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-#chart-area.active-charts {
-  display: flex;
-}
-#chart-area canvas {
-  flex: 1;
-  max-height: 250px;
-}
+/* Charts area */
+#chart-area { display: none; gap: 1rem; margin-bottom: 1rem; }
+#chart-area.active-charts { display: flex; }
+#chart-area canvas { flex: 1; max-height: 250px; }
 
 /* Bảng dữ liệu */
-.table-wrapper {
-  flex: 1;
-  overflow-y: auto;
-}
-.table-wrapper table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.table-wrapper th,
-.table-wrapper td {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  text-align: center;
-}
-.table-wrapper thead tr {
-  position: sticky;
-  top: 0;
-  background: #f0f0f0;
-}
+.table-wrapper { flex: 1; overflow-y: auto; }
+.table-wrapper table { width: 100%; border-collapse: collapse; }
+.table-wrapper th, .table-wrapper td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+.table-wrapper thead tr { position: sticky; top: 0; background: #f0f0f0; }

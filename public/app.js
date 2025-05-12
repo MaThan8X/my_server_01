@@ -1,47 +1,43 @@
 // public/app.js
-
-let selectedId = '';    // '' = Tất cả
+let selectedId = '';
 let waterChart = null, voltChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const fromInput = document.getElementById('fromInput');
   const toInput   = document.getElementById('toInput');
   const viewBtn   = document.getElementById('viewBtn');
+  const stationTbody = document.getElementById('stations');
   const chartArea = document.getElementById('chart-area');
 
-  // 1️⃣ Load sidebar Mã Trạm
+  // Load sidebar IDs
   async function loadStations() {
     const res = await fetch('/.netlify/functions/get-ids');
     const ids = await res.json();
-    const ul  = document.getElementById('stations');
 
-    // Luôn có mục 'Tất cả'
-    ul.innerHTML = '<li data-id="">Tất cả</li>' +
-      ids.map(id => `<li data-id="${id}">${id}</li>`).join('');
+    // Build rows
+    let html = '<tr data-id=""><td>Tất cả</td></tr>' +
+      ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`).join('');
+    stationTbody.innerHTML = html;
 
-    ul.querySelectorAll('li').forEach(li => {
-      li.addEventListener('click', () => {
-        ul.querySelectorAll('li').forEach(x => x.classList.remove('active'));
-        li.classList.add('active');
-        selectedId = li.dataset.id;
+    // Attach click events
+    stationTbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => {
+        stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+        selectedId = tr.dataset.id;
         fetchData();
       });
     });
 
-    // Active mặc định
-    ul.querySelector('li[data-id=""]').classList.add('active');
+    // Default active 'Tất cả'
+    stationTbody.querySelector('tr[data-id=""]').classList.add('active');
   }
 
-  // 2️⃣ Fetch dữ liệu & quyết định show/hide chart
+  // Fetch data and toggle charts
   async function fetchData() {
-    // Show charts chỉ khi chọn trạm
-    if (selectedId) {
-      chartArea.classList.add('active-charts');
-    } else {
-      chartArea.classList.remove('active-charts');
-    }
+    if (selectedId) chartArea.classList.add('active-charts');
+    else chartArea.classList.remove('active-charts');
 
-    // Build URL với & (rawQueryString vẫn giữ ;)
     const params = [];
     if (fromInput.value) params.push(`from=${encodeURIComponent(fromInput.value)}`);
     if (toInput.value)   params.push(`to=${encodeURIComponent(toInput.value)}`);
@@ -57,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedId) renderCharts(data);
   }
 
-  // 3️⃣ Render bảng (ID luôn hiện)
+  // Render table
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
@@ -65,40 +61,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     data.slice(0, limit).forEach(r => {
       const tr = document.createElement('tr');
-
-      // Cột ID
-      const tdId = document.createElement('td');
-      tdId.textContent = r.id;
-      tr.appendChild(tdId);
-
-      // Các cột khác
+      // ID
+      const tdId = document.createElement('td'); tdId.textContent = r.id; tr.appendChild(tdId);
+      // Other cols
       ['date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
-        const td = document.createElement('td');
-        td.textContent = r[key];
-        tr.appendChild(td);
+        const td = document.createElement('td'); td.textContent = r[key]; tr.appendChild(td);
       });
-
       tbody.appendChild(tr);
     });
   }
 
-  // 4️⃣ Render/Update charts
+  // Render charts
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
     const voltData  = data.map(r => Number(r.vol));
 
-    // Water chart
     if (!waterChart) {
       waterChart = new Chart(
-        document.getElementById('waterChart').getContext('2d'), {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{ label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2 }]
-          },
-          options: { responsive:true }
-        }
+        document.getElementById('waterChart').getContext('2d'),
+        { type:'line', data:{labels, datasets:[{label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
       waterChart.data.labels = labels;
@@ -106,17 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
       waterChart.update();
     }
 
-    // Volt chart
     if (!voltChart) {
       voltChart = new Chart(
-        document.getElementById('voltChart').getContext('2d'), {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{ label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2 }]
-          },
-          options: { responsive:true }
-        }
+        document.getElementById('voltChart').getContext('2d'),
+        { type:'line', data:{labels, datasets:[{label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
       voltChart.data.labels = labels;
@@ -125,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5️⃣ Khởi
+  // Initialize
   viewBtn.addEventListener('click', fetchData);
   loadStations();
   fetchData();
