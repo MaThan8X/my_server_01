@@ -3,7 +3,14 @@
 body, html { height: 100%; font-family: sans-serif; }
 
 /* Container chính */
-#container { display: flex; height: 100%; }
+#main-view {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  /* Cho phép cuộn dọc khi content vượt quá */
+  overflow-y: auto;
+}
 
 /* Sidebar Mã Trạm */
 #station-list {
