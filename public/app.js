@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fromInput = document.getElementById('fromInput');
   const toInput   = document.getElementById('toInput');
   const viewBtn   = document.getElementById('viewBtn');
+  const chartArea = document.getElementById('chart-area');
 
   // 1️⃣ Load sidebar Mã Trạm
   async function loadStations() {
@@ -14,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ids = await res.json();
     const ul  = document.getElementById('stations');
 
-    // Luôn có mục 'Tất cả' ở đầu
+    // Luôn có mục 'Tất cả'
     ul.innerHTML = '<li data-id="">Tất cả</li>' +
       ids.map(id => `<li data-id="${id}">${id}</li>`).join('');
 
@@ -27,12 +28,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Default active
+    // Active mặc định
     ul.querySelector('li[data-id=""]').classList.add('active');
   }
 
-  // 2️⃣ Fetch và render
+  // 2️⃣ Fetch dữ liệu & quyết định show/hide chart
   async function fetchData() {
+    // Show charts chỉ khi chọn trạm
+    if (selectedId) {
+      chartArea.classList.add('active-charts');
+    } else {
+      chartArea.classList.remove('active-charts');
+    }
+
+    // Build URL với & (rawQueryString vẫn giữ ;)
     const params = [];
     if (fromInput.value) params.push(`from=${encodeURIComponent(fromInput.value)}`);
     if (toInput.value)   params.push(`to=${encodeURIComponent(toInput.value)}`);
@@ -45,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = await res.json();
 
     renderTable(data);
-    renderCharts(data);
+    if (selectedId) renderCharts(data);
   }
 
-  // 3️⃣ Render bảng (cột ID luôn hiện)
+  // 3️⃣ Render bảng (ID luôn hiện)
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
@@ -57,12 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
     data.slice(0, limit).forEach(r => {
       const tr = document.createElement('tr');
 
-      // ID
+      // Cột ID
       const tdId = document.createElement('td');
       tdId.textContent = r.id;
       tr.appendChild(tdId);
 
-      // Các cột tiếp theo
+      // Các cột khác
       ['date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
         const td = document.createElement('td');
         td.textContent = r[key];
@@ -73,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4️⃣ Render / update charts
+  // 4️⃣ Render/Update charts
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
@@ -82,19 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Water chart
     if (!waterChart) {
       waterChart = new Chart(
-        document.getElementById('waterChart').getContext('2d'),
-        {
+        document.getElementById('waterChart').getContext('2d'), {
           type: 'line',
           data: {
             labels,
-            datasets: [{
-              label: 'Mực nước (cm)',
-              data: waterData,
-              fill: false,
-              borderWidth: 2
-            }]
+            datasets: [{ label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2 }]
           },
-          options: { responsive: true }
+          options: { responsive:true }
         }
       );
     } else {
@@ -106,19 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Volt chart
     if (!voltChart) {
       voltChart = new Chart(
-        document.getElementById('voltChart').getContext('2d'),
-        {
+        document.getElementById('voltChart').getContext('2d'), {
           type: 'line',
           data: {
             labels,
-            datasets: [{
-              label: 'Điện áp (VoL)',
-              data: voltData,
-              fill: false,
-              borderWidth: 2
-            }]
+            datasets: [{ label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2 }]
           },
-          options: { responsive: true }
+          options: { responsive:true }
         }
       );
     } else {
