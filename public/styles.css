@@ -5,17 +5,8 @@ body, html { height: 100%; font-family: sans-serif; }
 /* Container chính */
 #container {
   display: flex;
-  /* Chiều cao full viewport để sidebar cố định */
+  /* Full viewport height để sidebar cố định */
   height: 100vh;
-}
-
-/* Main content */
-#main-view {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
 }
 
 /* Sidebar Mã Trạm */
@@ -33,7 +24,6 @@ body, html { height: 100%; font-family: sans-serif; }
 }
 #stations {
   list-style: none;
-  /* Chiếm hết không gian chiều cao còn lại */
   flex: 1;
   overflow-y: auto;
 }
@@ -45,9 +35,7 @@ body, html { height: 100%; font-family: sans-serif; }
   border-radius: 4px;
   background: #fff;
 }
-#stations li:hover {
-  background: #eef5ff;
-}
+#stations li:hover { background: #eef5ff; }
 #stations li.active {
   background: #007acc;
   color: #fff;
@@ -55,23 +43,56 @@ body, html { height: 100%; font-family: sans-serif; }
 }
 
 /* Main content */
-#main-view { flex: 1; padding: 1rem; display: flex; flex-direction: column; overflow: hidden; }
+#main-view {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
 
 /* Filter */
 .filter { margin-bottom: 1rem; }
-.filter input, .filter button { margin-left: 0.5rem; margin-right: 1rem; padding: 0.3rem 0.5rem; }
+.filter input, .filter button {
+  margin: 0 1rem 0 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
 
 /* Charts area */
-#chart-area { display: none; gap: 1rem; margin-bottom: 1rem; }
+#chart-area {
+  display: none;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 #chart-area.active-charts {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  /* Giới hạn chiều cao bằng một nửa viewport */
+  max-height: 50vh;
+  overflow-y: auto;
 }
-#chart-area canvas { flex: 1; max-height: 250px; }
+#chart-area canvas {
+  flex: none;
+  max-height: 250px;
+}
 
 /* Bảng dữ liệu */
-.table-wrapper { flex: 1; overflow-y: auto; }
-.table-wrapper table { width: 100%; border-collapse: collapse; }
-.table-wrapper th, .table-wrapper td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
-.table-wrapper thead tr { position: sticky; top: 0; background: #f0f0f0; }
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-wrapper th, .table-wrapper td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+.table-wrapper thead tr {
+  position: sticky;
+  top: 0;
+  background: #f0f0f0;
+}
