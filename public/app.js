@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ids = await res.json();
     const ul  = document.getElementById('stations');
 
+    // Luôn có mục 'Tất cả' ở đầu
     ul.innerHTML = '<li data-id="">Tất cả</li>' +
       ids.map(id => `<li data-id="${id}">${id}</li>`).join('');
 
@@ -26,11 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Mặc định active “Tất cả”
+    // Default active
     ul.querySelector('li[data-id=""]').classList.add('active');
   }
 
-  // 2️⃣ Fetch dữ liệu từ Function, có lọc ID, from, to
+  // 2️⃣ Fetch và render
   async function fetchData() {
     const params = [];
     if (fromInput.value) params.push(`from=${encodeURIComponent(fromInput.value)}`);
@@ -47,23 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCharts(data);
   }
 
-  // 3️⃣ Render bảng, luôn có cột ID
+  // 3️⃣ Render bảng (cột ID luôn hiện)
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
-
-    // Nếu đã chọn ID thì giới hạn 10, không thì 30
     const limit = selectedId ? 10 : 30;
 
     data.slice(0, limit).forEach(r => {
       const tr = document.createElement('tr');
 
-      // ❗ Cột ID
+      // ID
       const tdId = document.createElement('td');
       tdId.textContent = r.id;
       tr.appendChild(tdId);
 
-      // Các cột còn lại
+      // Các cột tiếp theo
       ['date','time','mucnuoc','vol','cbe1x4x'].forEach(key => {
         const td = document.createElement('td');
         td.textContent = r[key];
@@ -74,16 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4️⃣ Render / cập nhật Chart.js cho mực nước & điện áp
+  // 4️⃣ Render / update charts
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
     const voltData  = data.map(r => Number(r.vol));
 
-    // – Biểu đồ Mực nước
+    // Water chart
     if (!waterChart) {
       waterChart = new Chart(
-        document.getElementById('myChart').getContext('2d'),
+        document.getElementById('waterChart').getContext('2d'),
         {
           type: 'line',
           data: {
@@ -104,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
       waterChart.update();
     }
 
-    // – Biểu đồ Điện áp
+    // Volt chart
     if (!voltChart) {
       voltChart = new Chart(
         document.getElementById('voltChart').getContext('2d'),
@@ -129,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5️⃣ Khởi tạo
+  // 5️⃣ Khởi
   viewBtn.addEventListener('click', fetchData);
   loadStations();
   fetchData();

@@ -5,62 +5,55 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Cảm Biến</title>
-  <!-- Link tới CSS chính -->
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Chart.js từ CDN (cần cho các biểu đồ) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-  <!-- Sidebar Mã Trạm -->
-  <aside id="station-list">
-    <h3>Mã Trạm</h3>
-    <ul id="stations"></ul>
-  </aside>
+  <div id="container">
+    <!-- Sidebar -->
+    <aside id="station-list">
+      <h3>Mã Trạm</h3>
+      <ul id="stations"></ul>
+    </aside>
 
-  <!-- Nội dung chính -->
-  <div id="main-content">
-    <h1>Dashboard Cảm Biến</h1>
+    <!-- Main content -->
+    <main id="main-view">
+      <h1>Dashboard Cảm Biến</h1>
 
-    <!-- Bộ lọc ngày -->
-    <div class="filter">
-      <label for="fromInput">Từ:</label>
-      <input id="fromInput" type="date" />
-      <label for="toInput">Đến:</label>
-      <input id="toInput" type="date" />
-      <button id="viewBtn">Xem</button>
-    </div>
+      <!-- Filter -->
+      <div class="filter">
+        <label for="fromInput">Từ:</label>
+        <input id="fromInput" type="date" />
+        <label for="toInput">Đến:</label>
+        <input id="toInput" type="date" />
+        <button id="viewBtn">Xem</button>
+      </div>
 
-    <!-- Biểu đồ mực nước -->
-    <div class="chart-container">
-      <canvas id="myChart"></canvas>
-    </div>
+      <!-- Charts -->
+      <div class="chart-wrapper">
+        <canvas id="waterChart"></canvas>
+        <canvas id="voltChart"></canvas>
+      </div>
 
-    <!-- Biểu đồ điện áp -->
-    <div class="chart-container">
-      <canvas id="voltChart"></canvas>
-    </div>
-
-    <!-- Bảng dữ liệu -->
-    <div class="table-container" id="tableContainer">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Ngày</th>
-            <th>Giờ</th>
-            <th>Mực nước</th>
-            <th>Vol</th>
-            <th>CBE1X4X</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
-    </div>
+      <!-- Table -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Ngày</th>
+              <th>Giờ</th>
+              <th>Mực nước</th>
+              <th>Vol</th>
+              <th>CBE1X4X</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </main>
   </div>
 
-  <!-- Script chính của ứng dụng -->
   <script src="app.js"></script>
 </body>
 </html>

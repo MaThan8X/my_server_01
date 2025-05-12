@@ -1,42 +1,87 @@
-/* ===== Layout sidebar + main ===== */
-body {
+/* Toàn cục */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { height: 100%; font-family: sans-serif; }
+
+/* Container chính: sidebar + main */
+#container {
   display: flex;
+  height: 100%;
 }
 
 /* Sidebar Mã Trạm */
 #station-list {
   width: 200px;
   border-right: 1px solid #ddd;
-  padding: 0.5rem;
-  max-height: calc(30 * 2rem);
+  padding: 1rem;
+  background: #fafafa;
   overflow-y: auto;
-  background: #fff;
 }
 #station-list h3 {
   margin-bottom: 0.5rem;
-  font-size: 18px;
-  color: #333;
 }
 #stations {
   list-style: none;
-  padding: 0;
-  margin: 0;
 }
 #stations li {
   padding: 0.5rem;
   cursor: pointer;
 }
 #stations li:hover {
-  background: #e6f2ff;
+  background: #eef5ff;
 }
 #stations li.active {
   background: #007acc;
   color: #fff;
 }
 
-/* Nội dung chính bên phải */
-#main-content {
+/* Main content */
+#main-view {
   flex: 1;
   padding: 1rem;
-  background: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Filter */
+.filter {
+  margin-bottom: 1rem;
+}
+.filter input,
+.filter button {
+  margin-left: 0.5rem;
+  margin-right: 1rem;
+  padding: 0.3rem 0.5rem;
+}
+
+/* Charts */
+.chart-wrapper {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.chart-wrapper canvas {
+  flex: 1;
+  max-height: 250px;
+}
+
+/* Table */
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-wrapper th,
+.table-wrapper td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+.table-wrapper th {
+  background: #f0f0f0;
+  position: sticky;
+  top: 0;
 }
