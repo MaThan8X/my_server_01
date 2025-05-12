@@ -9,42 +9,50 @@ document.addEventListener('DOMContentLoaded', () => {
   const stationList = document.getElementById('stations');
   const chartArea  = document.getElementById('chart-area');
 
-  // 1️⃣ Load sidebar IDs
+  // 1️⃣ Load sidebar IDs (từ get-ids, fallback get-data)
   async function loadStations() {
+    let ids = [];
     try {
       const res = await fetch('/.netlify/functions/get-ids');
-      if (!res.ok) throw new Error('get-ids status ' + res.status);
-      const ids = await res.json();
-      // Tạo li list
-      const frag = document.createDocumentFragment();
-      // 'Tất cả'
-      const liAll = document.createElement('li');
-      liAll.textContent = 'Tất cả';
-      liAll.dataset.id = '';
-      frag.appendChild(liAll);
-      // Các ID
-      ids.forEach(id => {
-        const li = document.createElement('li');
-        li.textContent = id;
-        li.dataset.id = id;
-        frag.appendChild(li);
-      });
-      stationList.innerHTML = '';
-      stationList.appendChild(frag);
-      // Event
-      stationList.querySelectorAll('li').forEach(li => {
-        li.addEventListener('click', () => {
-          stationList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
-          li.classList.add('active');
-          selectedId = li.dataset.id;
-          fetchData();
-        });
-      });
-      // Active mặc định
-      stationList.querySelector('li[data-id=""]').classList.add('active');
+      if (res.ok) ids = await res.json();
     } catch (err) {
-      console.error('Error loading stations:', err);
+      console.error('get-ids error:', err);
     }
+    if (!ids.length) {
+      try {
+        const res2 = await fetch('/.netlify/functions/get-data');
+        const allData = await res2.json();
+        ids = Array.from(new Set(allData.map(item => item.id))).sort().reverse();
+      } catch (err) {
+        console.error('fallback get-data error:', err);
+      }
+    }
+
+    // Build list items
+    stationList.innerHTML = '';
+    const liAll = document.createElement('li');
+    liAll.textContent = 'Tất cả';
+    liAll.dataset.id = '';
+    stationList.appendChild(liAll);
+
+    ids.forEach(id => {
+      const li = document.createElement('li');
+      li.textContent = id;
+      li.dataset.id = id;
+      stationList.appendChild(li);
+    });
+
+    // Add click events
+    stationList.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        stationList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
+        li.classList.add('active');
+        selectedId = li.dataset.id;
+        fetchData();
+      });
+    });
+    // Default active
+    stationList.querySelector('li[data-id=""]').classList.add('active');
   }
 
   // 2️⃣ Fetch data & toggle charts
@@ -61,11 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTable(data);
       if (selectedId) renderCharts(data);
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('fetchData error:', err);
     }
   }
 
-  // 3️⃣ Render table
+  // 3️⃣ Render table data
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
@@ -81,26 +89,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4️⃣ Render charts
+  // 4️⃣ Render or update charts
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
     const voltData  = data.map(r => Number(r.vol));
+
     if (!waterChart) {
       waterChart = new Chart(
         document.getElementById('waterChart').getContext('2d'),
-        { type:'line', data:{labels,datasets:[{label:'Mực nước (cm)',data:waterData,fill:false,borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels, datasets:[{label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
-      waterChart.data.labels = labels; waterChart.data.datasets[0].data = waterData; waterChart.update();
+      waterChart.data.labels = labels;
+      waterChart.data.datasets[0].data = waterData;
+      waterChart.update();
     }
+
     if (!voltChart) {
       voltChart = new Chart(
         document.getElementById('voltChart').getContext('2d'),
-        { type:'line', data:{labels,datasets:[{label:'Điện áp (VoL)',data:voltData,fill:false,borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels, datasets:[{label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
-      voltChart.data.labels = labels; voltChart.data.datasets[0].data = voltData; voltChart.update();
+      voltChart.data.labels = labels;
+      voltChart.data.datasets[0].data = voltData;
+      voltChart.update();
     }
   }
 
