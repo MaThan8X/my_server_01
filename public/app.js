@@ -11,13 +11,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 1️⃣ Load sidebar IDs, thử get-ids trước, fallback dùng get-data
   async function loadStations() {
+    console.log('🏷️ loadStations: fetching IDs');
     let ids = [];
     try {
       const res = await fetch('/.netlify/functions/get-ids');
+      console.log('🏷️ get-ids response status:', res.status);
       if (res.ok) ids = await res.json();
+      console.log('🏷️ IDs from get-ids:', ids);
     } catch (err) {
       console.error('get-ids failed:', err);
     }
+    // fallback nếu không có IDs
+    if (!ids.length) {
+      console.log('🏷️ Fallback: fetch all data to derive IDs');
+      try {
+        const res2 = await fetch('/.netlify/functions/get-data');
+        const all = await res2.json();
+        ids = Array.from(new Set(all.map(r => r.id))).sort().reverse();
+        console.log('🏷️ Fallback IDs:', ids);
+      } catch (err) {
+        console.error('fallback get-data IDs failed:', err);
+      }
+    }
+
+    // Tạo rows: 'Tất cả' + các ID
+    const rows = ['<tr data-id=""><td>Tất cả</td></tr>']
+      .concat(ids.map(id => `<tr data-id="${id}"><td>${id}</td></tr>`));
+    stationTbody.innerHTML = rows.join('');
+
+    // Đính sự kiện click
+    stationTbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => {
+        stationTbody.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+        selectedId = tr.dataset.id;
+        fetchData();
+      });
+    });
+    // Active mặc định 'Tất cả'
+    const first = stationTbody.querySelector('tr[data-id=""]');
+    if (first) first.classList.add('active');
+  }
     // Nếu không có gì, fallback lấy từ get-data
     if (!ids.length) {
       try {
