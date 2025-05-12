@@ -9,68 +9,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const stationList = document.getElementById('stations');
   const chartArea  = document.getElementById('chart-area');
 
-  // 1️⃣ Load sidebar IDs (từ get-ids, fallback get-data)
+  // 1️⃣ Load sidebar IDs
   async function loadStations() {
-    let ids = [];
     try {
       const res = await fetch('/.netlify/functions/get-ids');
-      if (res.ok) ids = await res.json();
-    } catch (err) {
-      console.error('get-ids error:', err);
-    }
-    if (!ids.length) {
-      try {
-        const res2 = await fetch('/.netlify/functions/get-data');
-        const allData = await res2.json();
-        ids = Array.from(new Set(allData.map(item => item.id))).sort().reverse();
-      } catch (err) {
-        console.error('fallback get-data error:', err);
-      }
-    }
-
-    // Build list items
-    stationList.innerHTML = '';
-    const liAll = document.createElement('li');
-    liAll.textContent = 'Tất cả';
-    liAll.dataset.id = '';
-    stationList.appendChild(liAll);
-
-    ids.forEach(id => {
-      const li = document.createElement('li');
-      li.textContent = id;
-      li.dataset.id = id;
-      stationList.appendChild(li);
-    });
-
-    // Add click events
-    stationList.querySelectorAll('li').forEach(li => {
-      li.addEventListener('click', () => {
-        stationList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
-        li.classList.add('active');
-        selectedId = li.dataset.id;
-        fetchData();
+      const ids = await res.json();
+      // Build simple list
+      stationList.innerHTML = '<li data-id="">Tất cả</li>' +
+        ids.map(id => `<li data-id="${id}">${id}</li>`).join('');
+      // Attach click events
+      stationList.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', () => {
+          stationList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
+          li.classList.add('active');
+          selectedId = li.dataset.id;
+          fetchData();
+        });
       });
-    });
-    // Default active
-    stationList.querySelector('li[data-id=""]').classList.add('active');
+      // Default active
+      stationList.querySelector('li[data-id=""]').classList.add('active');
+    } catch (err) {
+      console.error('Error loading stations:', err);
+    }
   }
 
   // 2️⃣ Fetch data & toggle charts
   async function fetchData() {
     chartArea.classList.toggle('active-charts', !!selectedId);
-    const params = [];
-    if (fromInput.value) params.push(`from=${encodeURIComponent(fromInput.value)}`);
-    if (toInput.value)   params.push(`to=${encodeURIComponent(toInput.value)}`);
-    if (selectedId)      params.push(`id=${encodeURIComponent(selectedId)}`);
-    const url = '/.netlify/functions/get-data' + (params.length ? '?' + params.join('&') : '');
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      renderTable(data);
-      if (selectedId) renderCharts(data);
-    } catch (err) {
-      console.error('fetchData error:', err);
-    }
+    let url = '/.netlify/functions/get-data';
+    if (selectedId) url += `?id=${selectedId}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    renderTable(data);
+    if (selectedId) renderCharts(data);
   }
 
   // 3️⃣ Render table data
@@ -98,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!waterChart) {
       waterChart = new Chart(
         document.getElementById('waterChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Mực nước (cm)', data:waterData, fill:false, borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels,datasets:[{label:'Mực nước (cm)',data:waterData,fill:false,borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
       waterChart.data.labels = labels;
@@ -109,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!voltChart) {
       voltChart = new Chart(
         document.getElementById('voltChart').getContext('2d'),
-        { type:'line', data:{labels, datasets:[{label:'Điện áp (VoL)', data:voltData, fill:false, borderWidth:2}]}, options:{responsive:true} }
+        { type:'line', data:{labels,datasets:[{label:'Điện áp (VoL)',data:voltData,fill:false,borderWidth:2}]}, options:{responsive:true} }
       );
     } else {
       voltChart.data.labels = labels;
