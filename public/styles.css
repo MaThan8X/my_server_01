@@ -6,7 +6,13 @@ body, html { height: 100%; font-family: sans-serif; }
 #container { display: flex; height: 100%; }
 
 /* Sidebar Mã Trạm */
-#station-list { width: 200px; padding: 0.5rem; background: #fafafa; border-right: 1px solid #ddd; overflow: hidden; }
+#station-list {
+  width: 200px;
+  padding: 0.5rem;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  max-height: 100vh;
+  overflow-y: auto; }
 #station-list table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 #station-list thead tr { display: table; width: 100%; }
 #station-list tbody { display: block; max-height: calc(30 * 2rem); overflow-y: auto; }
