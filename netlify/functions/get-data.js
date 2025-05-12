@@ -1,42 +1,56 @@
 // netlify/functions/get-data.js
 
-require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
+// 1. Import Supabase client
+const { createClient } = require('@supabase/supabase-js')
 
-// Khởi Supabase client
+// 2. Khởi Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
-);
+)
 
-exports.handler = async (event) => {
-  const { from, to, id } = event.queryStringParameters || {};
+// 3. Export handler
+exports.handler = async function(event) {
   try {
-    // Xây dựng query
-    let query = supabase.from('sensor_data').select('*');
-    if (id)   query = query.eq('id', id);
-    if (from) query = query.gte('date', from);
-    if (to)   query = query.lte('date', to);
-    // Sắp xếp giảm dần theo date rồi time
-    query = query
-      .order('date', { ascending: false })
-      .order('time', { ascending: false });
+    // 4. Lấy query params (nếu có): from, to (định dạng dd/MM/yyyy)
+    //    dựa vào event.rawUrl
+    const url  = new URL(event.rawUrl, 'http://dummy')
+    const from = url.searchParams.get('from')
+    const to   = url.searchParams.get('to')
 
-    // Thực thi
-    const { data, error } = await query;
-    if (error) throw error;
+    // 5. Build query Supabase
+    let query = supabase
+      .from('sensor_data')
+      .select('id, date, time, mucnuoc, vol, cbe1x4x, created_at')
+      .order('created_at', { ascending: false })
 
+    // 6. Nếu có giới hạn thời gian, apply filter
+    if (from) query = query.gte('date', from)
+    if (to)   query = query.lte('date', to)
+
+    // 7. Thực thi và lấy data
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Supabase get-data error:', error)
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: error.message })
+      }
+    }
+
+    // 8. Trả về JSON mảng bản ghi
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    };
-  } catch (error) {
-    console.error('get-data error:', error.message);
+    }
+  } catch (err) {
+    console.error('Exception in get-data:', err)
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message })
-    };
+      body: JSON.stringify({ error: err.message })
+    }
   }
-};
+}
