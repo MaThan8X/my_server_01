@@ -6,21 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Cảm Biến</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chuyển sang bản UMD minified chính thức -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 <body>
   <div id="container">
-    <!-- Sidebar Mã Trạm -->
     <aside id="station-list">
       <h3>Mã Trạm</h3>
       <ul id="stations"></ul>
     </aside>
 
-    <!-- Main content -->
     <main id="main-view">
       <h1>Dashboard Cảm Biến</h1>
-
-      <!-- Bộ lọc -->
       <div class="filter">
         <label for="fromInput">Từ:</label>
         <input id="fromInput" type="date" />
@@ -29,23 +26,17 @@
         <button id="viewBtn">Xem</button>
       </div>
 
-      <!-- Charts area (Volt trên, Water dưới) -->
       <div id="chart-area" class="chart-wrapper">
         <canvas id="voltChart"></canvas>
         <canvas id="waterChart"></canvas>
       </div>
 
-      <!-- Bảng dữ liệu -->
       <div class="table-wrapper main-mode">
         <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Ngày</th>
-              <th>Giờ</th>
-              <th>Mực nước</th>
-              <th>Vol</th>
-              <th>CBE1X4X</th>
+              <th>ID</th><th>Ngày</th><th>Giờ</th>
+              <th>Mực nước</th><th>Vol</th><th>CBE1X4X</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>

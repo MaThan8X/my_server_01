@@ -70,6 +70,4 @@ html, body { min-height: 100vh; overflow-y: auto; font-family: sans-serif; }
 .table-wrapper.main-mode {
   max-height: calc(30 * 2.5rem + 2rem);
 }
-.table-wrapper.single-mode {
-  /* CSS cho JS giới hạn 10 rows, không cần thêm max-height */
-}
+
