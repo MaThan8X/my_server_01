@@ -6,11 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Cảm Biến</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Chart.js UMD bundle -->
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.umd.min.js"></script>
-  <!-- Main application logic -->
-  <script defer src="app.js"></script>
 </head>
 <body>
   <div id="container">
@@ -31,7 +26,7 @@
         <button id="viewBtn">Xem</button>
       </div>
 
-      <!-- Charts area -->
+      <!-- Charts area: Volt trên, Water dưới -->
       <div id="chart-area" class="chart-wrapper">
         <canvas id="voltChart"></canvas>
         <canvas id="waterChart"></canvas>
@@ -55,5 +50,9 @@
       </div>
     </main>
   </div>
+
+  <!-- Chart.js UMD bundle và app.js phải được load ở cuối body -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
