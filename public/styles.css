@@ -82,7 +82,7 @@ html, body { min-height: 100vh; overflow-y: auto; font-family: sans-serif; }
 /* Bảng dữ liệu */
 .table-wrapper {
   flex: 1;
-  max-height: calc(10 * 2.5rem + 2rem); /* Hiển thị tối thiểu 10 dòng */
+  /* Bỏ hẳn max-height cứng, chỉ scroll khi JS gán */
   overflow-y: auto;
 }
 .table-wrapper table {
@@ -98,4 +98,16 @@ html, body { min-height: 100vh; overflow-y: auto; font-family: sans-serif; }
   position: sticky;
   top: 0;
   background: #f0f0f0;
+}
+
+/* Table modes */
+.table-wrapper.main-mode {
+  /* show up to 30 rows before scroll */
+  max-height: calc(30 * 2.5rem + 2rem);
+  overflow-y: auto;
+}
+.table-wrapper.single-mode {
+  /* no max-height, show 10 rows (JS limit) and leave blank space */
+  max-height: none;
+  overflow-y: auto;
 }
