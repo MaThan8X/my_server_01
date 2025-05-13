@@ -9,7 +9,6 @@
 html, body {
   width: 100%;
   font-family: sans-serif;
-  /* Mặc định overflow: visible để toàn trang cuộn */
 }
 
 /* ============================
@@ -17,7 +16,7 @@ html, body {
    ============================ */
 #container {
   display: flex;
-  min-height: 100vh;   /* Thay height:100vh → min-height:100vh */
+  min-height: 100vh;
 }
 
 /* ============================
@@ -30,7 +29,8 @@ html, body {
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  max-height: calc(20 * 2rem + 1rem);
+  /* Chỉ scroll khi > 30 dòng */
+  max-height: calc(30 * 2rem + 1rem);
   overflow-y: auto;
 }
 #station-list h3 {
@@ -68,7 +68,6 @@ html, body {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  /* overflow-y auto để nội dung dài cuộn trong main */
   overflow-y: auto;
 }
 
@@ -113,9 +112,11 @@ html, body {
   overflow-y: auto;
 }
 .table-wrapper.main-mode {
+  /* Toàn cục: tối đa 30 dòng */
   max-height: calc(30 * 2rem + 1rem);
 }
 .table-wrapper.single-mode {
+  /* Riêng ID: tối đa 10 dòng */
   max-height: calc(10 * 2rem + 1rem);
 }
 
