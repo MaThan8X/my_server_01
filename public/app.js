@@ -1,5 +1,6 @@
 // public/app.js
-let selectedId = '';
+
+let selectedId = '';    
 let waterChart = null, voltChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,15 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const chartArea    = document.getElementById('chart-area');
   const tableWrapper = document.querySelector('.table-wrapper');
 
+  // 1️⃣ Load sidebar IDs, fallback nếu get-ids lỗi
   async function loadStations() {
     let ids = [];
     try {
       const res = await fetch('/.netlify/functions/get-ids');
-      if (res.ok) ids = await res.json();
-    } catch (e) {}
-    if (!ids.length) {
+      if (!res.ok) throw new Error('get-ids failed');
+      ids = await res.json();
+    } catch (err) {
+      console.warn('get-ids errored, falling back to get-data:', err);
       const res2 = await fetch('/.netlify/functions/get-data');
-      const all  = await res2.json();
+      const all   = await res2.json();
       ids = Array.from(new Set(all.map(r => r.id))).sort().reverse();
     }
     stationList.innerHTML = '<li data-id="">Tất cả</li>' +
@@ -34,11 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     stationList.querySelector('li[data-id=""]').classList.add('active');
   }
 
+  // 2️⃣ Fetch data & render
   async function fetchData() {
-    // Charts
+    // Show/hide charts area
     chartArea.classList.toggle('active-charts', !!selectedId);
-
-    // Table mode
+    // Table scrolling mode
     tableWrapper.classList.toggle('main-mode', selectedId === '');
     tableWrapper.classList.toggle('single-mode', selectedId !== '');
 
@@ -50,12 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedId)      params.push(`id=${selectedId}`);
     if (params.length) url += '?' + params.join('&');
 
+    // Fetch & render
     const res  = await fetch(url);
     const data = await res.json();
     renderTable(data);
     if (selectedId) renderCharts(data);
   }
 
+  // 3️⃣ Render table (30 rows for all, 10 for single)
   function renderTable(data) {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
@@ -71,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 4️⃣ Render/Update charts with aspectRatio=2
   function renderCharts(data) {
     const labels    = data.map(r => `${r.date} ${r.time}`);
     const waterData = data.map(r => Number(r.mucnuoc));
@@ -84,14 +90,15 @@ document.addEventListener('DOMContentLoaded', () => {
           type: 'line',
           data: { labels, datasets:[{
             label: 'Điện áp (VoL)',
-            data: voltData, fill:false, borderWidth:2
+            data: voltData, fill: false, borderWidth: 2
           }]},
           options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
             scales: {
               y: { ticks: { maxTicksLimit: 5 } },
-              x: { ticks: { maxTicksLimit: 8, maxRotation:45 } }
+              x: { ticks: { maxTicksLimit: 8, maxRotation: 45 } }
             }
           }
         }
@@ -110,14 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
           type: 'line',
           data: { labels, datasets:[{
             label: 'Mực nước (cm)',
-            data: waterData, fill:false, borderWidth:2
+            data: waterData, fill: false, borderWidth: 2
           }]},
           options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
             scales: {
               y: { ticks: { maxTicksLimit: 5 } },
-              x: { ticks: { maxTicksLimit: 8, maxRotation:45 } }
+              x: { ticks: { maxTicksLimit: 8, maxRotation: 45 } }
             }
           }
         }
@@ -129,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // 5️⃣ Events
   viewBtn.addEventListener('click', fetchData);
+
+  // Initialize
   loadStations();
   fetchData();
 });
