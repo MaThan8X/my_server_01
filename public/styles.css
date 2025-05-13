@@ -10,7 +10,7 @@ html, body {
   width: 100%;
   height: 100%;
   font-family: sans-serif;
-  overflow: hidden; /* Chỉ scroll bên trong #container */
+  /* Bỏ overflow:hidden để nội dung dài có thể cuộn */
 }
 
 /* ============================
@@ -18,7 +18,7 @@ html, body {
    ============================ */
 #container {
   display: flex;
-  height: 100vh;    /* Đảm bảo viewport luôn đủ chiều cao */
+  height: 100vh;    /* Chiều cao viewport */
 }
 
 /* ============================
@@ -31,34 +31,8 @@ html, body {
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  /* Chiều cao tối đa đúng 20 mục rồi mới scroll */
   max-height: calc(20 * 2rem + 1rem);
   overflow-y: auto;
-}
-#station-list h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-}
-#stations {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-#stations li {
-  padding: 0.5rem;
-  margin-bottom: 0.3rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-#stations li:hover {
-  background: #eef5ff;
-}
-#stations li.active {
-  background: #007acc;
-  color: #fff;
-  font-weight: bold;
 }
 
 /* ============================
@@ -69,7 +43,7 @@ html, body {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: auto;  /* Scroll toàn bộ main nếu nội dung dài */
 }
 
 /* ============================
@@ -78,10 +52,8 @@ html, body {
 .filter {
   margin-bottom: 1rem;
 }
-.filter label {
-  margin-right: 0.5rem;
-}
-.filter input, .filter button {
+.filter input,
+.filter button {
   margin-right: 1rem;
   padding: 0.3rem 0.6rem;
 }
@@ -91,19 +63,18 @@ html, body {
    ============================ */
 #chart-area {
   display: none;
+  flex-direction: column;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 #chart-area.active-charts {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow: visible;   /* Không scroll riêng, dùng scroll toàn page */
 }
-/* Thu gọn chiều cao mỗi canvas */
+/* Đặt cố định mỗi canvas chỉ 150px cao */
 #chart-area canvas {
-  flex: none;
-  height: 180px;       /* Giảm từ ~250px xuống 180px */
+  height: 150px !important;
+  /* đảm bảo không giãn */
+  max-height: 150px;
 }
 
 /* ============================
@@ -111,14 +82,12 @@ html, body {
    ============================ */
 .table-wrapper {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto;  
 }
 .table-wrapper.main-mode {
-  /* Toàn cục: tối đa 30 dòng rồi mới scroll */
   max-height: calc(30 * 2rem + 1rem);
 }
 .table-wrapper.single-mode {
-  /* Riêng ID: tối thiểu 10 dòng để mới scroll */
   max-height: calc(10 * 2rem + 1rem);
 }
 
