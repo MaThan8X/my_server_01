@@ -1,3 +1,63 @@
+/* Reset & cơ bản */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { height: 100%; font-family: sans-serif; }
+
+/* Container chính */
+#container {
+  display: flex;
+  /* Full viewport height để sidebar cố định */
+  height: 100vh;
+}
+
+/* Sidebar Mã Trạm */
+#station-list {
+  width: 200px;
+  padding: 1rem;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+#station-list h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+#stations {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+}
+#stations li {
+  padding: 0.5rem;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  margin-bottom: 0.3rem;
+  border-radius: 4px;
+  background: #fff;
+}
+#stations li:hover { background: #eef5ff; }
+#stations li.active {
+  background: #007acc;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Main content */
+#main-view {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Filter */
+.filter { margin-bottom: 1rem; }
+.filter input, .filter button {
+  margin: 0 1rem 0 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
+
 /* Charts area */
 #chart-area {
   display: none;
@@ -8,38 +68,31 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  /* Luôn hiển thị đủ 2 biểu đồ, không scroll */
-  max-height: none;
-  overflow: visible;
+  /* Giới hạn chiều cao bằng một nửa viewport */
+  max-height: 50vh;
+  overflow-y: auto;
 }
 #chart-area canvas {
   flex: none;
   max-height: 250px;
 }
 
-/* Sidebar đảm bảo height cho 20 items */
-#station-list {
-  width: 200px;
-  padding: 1rem;
-  background: #fafafa;
-  border-right: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  /* Chiều cao tối thiểu: 20 li * 2.5rem + header 2rem */
-  min-height: calc(20 * 2.5rem + 2rem);
-}
-
-/* Station list: scroll chung page, không riêng list */
-#stations {
-  list-style: none;
-  flex: none;
-  overflow: visible;
-}
-
-/* Bảng dữ liệu scroll khi >10 dòng */
+/* Bảng dữ liệu */
 .table-wrapper {
   flex: 1;
-  /* 10 rows * 2.5rem + header 2rem */
-  max-height: calc(10 * 2.5rem + 2rem);
   overflow-y: auto;
+}
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-wrapper th, .table-wrapper td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+.table-wrapper thead tr {
+  position: sticky;
+  top: 0;
+  background: #f0f0f0;
 }
